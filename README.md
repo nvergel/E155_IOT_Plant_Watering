@@ -1,3 +1,3 @@
 # E155 IOT Plant Watering
 
-IOT solution for automatic plante watering system driven by stm32nucleo board.
+IOT solution for automatic plant watering system driven by stm32nucleo board.
