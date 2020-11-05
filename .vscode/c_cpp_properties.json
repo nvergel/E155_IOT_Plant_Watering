@@ -1,0 +1,65 @@
+{
+    "configurations": [
+        {
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
+        },
+        {
+            "name": "Mac",
+            "macFrameworkPath": [],
+            "includePath": [
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/include",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/src",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_USART",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_SPI",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_FLASH",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_ADC",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_1WIRE",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_TIM",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_RCC",
+                "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_GPIO",
+                "/Users/nicolasvergel/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                "/Users/nicolasvergel/.platformio/packages/framework-cmsis-stm32f4/Include",
+                "/Users/nicolasvergel/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/include",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/src",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_USART",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_SPI",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_FLASH",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_ADC",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_1WIRE",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_TIM",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_RCC",
+                    "/Users/nicolasvergel/Documents/HMC/MicroPs/lab7/STM32F401RE_Libraries/STM32F401RE_GPIO",
+                    "/Users/nicolasvergel/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                    "/Users/nicolasvergel/.platformio/packages/framework-cmsis-stm32f4/Include",
+                    "/Users/nicolasvergel/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=50001",
+                "STM32F401xE",
+                "STM32F4xx",
+                "ARDUINO_GENERIC_F401RE",
+                "F_CPU=84000000L",
+                "GENERIC_F401RX",
+                ""
+            ],
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/Users/nicolasvergel/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc",
+            "compilerArgs": [
+                "-mthumb",
+                "-mcpu=cortex-m4",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
