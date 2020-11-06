@@ -36,3 +36,23 @@ void ADCmeasure(uint16_t* array, int length) {
     ADC1->CR2.CONT = 0;
     ADC1->CR2.ADON = 0;
 }
+
+uint16_t ADCsingle_measure() {
+    uint16_t moisture;
+    ADC1->CR2.ADON = 1;
+    
+    //ADC1->CR2.CONT = 1;
+    ADC1->CR2.SWSTART = 1;
+
+    while(!ADC1->SR.EOC);
+    
+    moisture = ADC1->DR.DR;
+
+    
+    //ADC1->CR2.CONT = 0;
+    ADC1->CR2.ADON = 0;
+    return moisture;
+}
+void moisturePercentage(uint16_t moisture){
+
+}

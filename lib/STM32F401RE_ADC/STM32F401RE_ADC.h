@@ -90,4 +90,6 @@ void ADCInit();
 
 void ADCmeasure(uint16_t* array, int length);
 
+void moisturePercentage(uint16_t moisture);
+
 #endif

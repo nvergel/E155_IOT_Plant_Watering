@@ -36,6 +36,10 @@ void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Create TCP server on port 80
     sendCommand("AT+CIPSERVER=1,80");
 
+    // Change to mode 3 (AP + station )
+    sendCommand("AT+CWMODE=3");
+
+
     // Connect to WiFi network
     uint8_t connect_cmd[128] = "";
     sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"", SSID, PASSWORD);
@@ -120,8 +124,9 @@ int main(void) {
     // Set up temporary buffers for requests
     uint8_t volatile http_request[BUFFER_SIZE] = "";
     uint8_t volatile temp_str[BUFFER_SIZE] = "";
-    uint16_t samples = 5000;
+    uint16_t samples = 1;
     uint16_t sound[samples];
+    uint16_t moisture;
     
     while(1) {
         // Clear temp_str buffer
@@ -152,6 +157,7 @@ int main(void) {
                 volatile uint8_t record_req = look_for_substring("=REC", http_request);
 
                 // Serve the individual HTML commands for the webpage
+                serveWebpage("<!DOCTYPE html>");
                 serveWebpage("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
                 serveWebpage("<title>ESP8266 Demo</title>");
                 serveWebpage("<style> body {background-color: #1c87c9; text-align: center;}</style>");
@@ -168,7 +174,7 @@ int main(void) {
 
                 // Close connection
                 sendCommand("AT+CIPCLOSE=0");
-                
+                /*
                 if (record_req) {
                     ADCmeasure(sound, samples);
                     sendString(TERM_USART, "\r\nV[:100]=");
@@ -177,6 +183,17 @@ int main(void) {
                         sprintf(cmd, "%d, ", sound[i]);
                         sendString(TERM_USART, cmd);
                     }
+                    sendString(TERM_USART, "\r\n");
+                }
+                */
+               if (record_req) {
+                    moisture = ADCsingle_measure();
+                    //sendString(TERM_USART, "\r\nV[:100]=");
+                    
+                    uint8_t cmd[10] = "";
+                    sprintf(cmd, "%d, ", moisture);
+                    sendString(TERM_USART, cmd);
+                    
                     sendString(TERM_USART, "\r\n");
                 }
             }

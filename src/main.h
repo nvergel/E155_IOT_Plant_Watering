@@ -15,12 +15,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Wifi Network Info (make sure to keep surrounding double quotes)
-#define SSID "Pepperoni"
-#define PASSWORD "fatboy8211"
+#define SSID "H8me"
+#define PASSWORD "03310722ni"
 
 #define NVIC_ISER0 ((uint32_t *) 0xE000E100UL)
 #define NVIC_ISER1 ((uint32_t *) 0xE000E104UL)
 #define SYSCFG_EXTICR4 ((uint32_t *) (0x40013800UL + 0x14UL))
+
 
 typedef struct {
     volatile uint32_t IMR;
@@ -46,6 +47,10 @@ typedef struct {
 #define DELAY_TIM TIM2
 #define CMD_DELAY_MS 30
 #define BUFFER_SIZE 2048
+
+//Moisture defines
+#define dry 3425
+#define wet 1900
 
 ///////////////////////////////////////////////////////////////////////////////
 // IRQn_Type and __NVIC_PRIO_BITS from stm32f401xe.h
