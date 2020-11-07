@@ -67,6 +67,11 @@ void serveWebpage(uint8_t str []) {
     sendCommand(str);
 }
 
+uint16_t moisturePercentage(uint16_t moistureADC){
+    
+    return moistureADC
+}
+
 /** Map USART1 IRQ handler to our custom ISR
  */
 void USART1_IRQHandler(){
@@ -126,7 +131,6 @@ int main(void) {
     uint8_t volatile temp_str[BUFFER_SIZE] = "";
     uint16_t samples = 1;
     uint16_t sound[samples];
-    uint16_t moisture;
     
     while(1) {
         // Clear temp_str buffer
@@ -187,12 +191,12 @@ int main(void) {
                 }
                 */
                if (record_req) {
-                    moisture = ADCsingle_measure();
+                    uint16_t moistureADC = ADCmeasure();
                     //sendString(TERM_USART, "\r\nV[:100]=");
                     
-                    uint8_t cmd[10] = "";
-                    sprintf(cmd, "%d, ", moisture);
-                    sendString(TERM_USART, cmd);
+                    uint8_t moisture[10] = "";
+                    sprintf(moisture, "%d, ", moisturePercentage(moistureADC));
+                    sendString(TERM_USART, moisture);
                     
                     sendString(TERM_USART, "\r\n");
                 }

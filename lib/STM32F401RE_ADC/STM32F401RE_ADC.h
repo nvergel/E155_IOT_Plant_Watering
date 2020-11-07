@@ -88,8 +88,6 @@ typedef struct {
 
 void ADCInit();
 
-void ADCmeasure(uint16_t* array, int length);
-
-void moisturePercentage(uint16_t moisture);
+uint16_t ADCmeasure();
 
 #endif

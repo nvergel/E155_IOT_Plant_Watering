@@ -1,4 +1,5 @@
 .pio
+.vscode
 155Project/.vscode/.browse.c_cpp.db*
 155Project/.vscode/c_cpp_properties.json
 155Project/.vscode/launch.json
