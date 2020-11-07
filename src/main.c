@@ -1,14 +1,10 @@
-/**
-    Main: Contains main function
-    @file main.c
-    @author Josh Brake
-    @version 1.0 10/7/2020
-*/
-
 #include "STM32F401RE.h"
 #include "main.h"
 #include <string.h>
 #include "UARTRingBuffer.h"
+#include "Moisture_Sensor.h"
+
+#define initial_probe_interval 60
 
 void sendCommand(uint8_t* cmd) {
     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
@@ -67,11 +63,6 @@ void serveWebpage(uint8_t str []) {
     sendCommand(str);
 }
 
-uint16_t moisturePercentage(uint16_t moistureADC){
-    
-    return moistureADC
-}
-
 /** Map USART1 IRQ handler to our custom ISR
  */
 void USART1_IRQHandler(){
@@ -86,6 +77,11 @@ void USART2_IRQHandler(){
     usart_ISR2(TERM_USART);
 }
 
+void TIM3_IRQHandler() {
+    probe();
+    TIM3->SR &= ~(0x1); // Clear UIF
+}
+
 int main(void) {
     // Configure flash latency and set clock to run at 84 MHz
     configureFlash();
@@ -96,11 +92,9 @@ int main(void) {
 
     // Initialize timer
     RCC->APB1ENR |= (1 << 0); // TIM2_EN
+    RCC->APB1ENR |= (1 << 1); // TIM3_EN
     initTIM(DELAY_TIM);
-
-    // Set up LED pin as output 
-    pinMode(GPIOA, GPIO_PA5, GPIO_INPUT);
-    pinMode(GPIOA, GPIO_PA6, GPIO_OUTPUT);
+    setTimer(TIM3, initial_probe_interval); // Probe every minute
 
     // Configure ESP and Terminal UARTs
     USART_TypeDef * ESP_USART = initUSART(ESP_USART_ID, 115200);
@@ -112,14 +106,24 @@ int main(void) {
     // Enable interrupts globally
     __enable_irq();
 
-    // Configure interrupt for USART1 and USART2
+    // Configure interrupt for TIM3, USART1 and USART2
+    *NVIC_ISER0 |= (1 << 29);
     *NVIC_ISER1 |= (1 << 5);
     *NVIC_ISER1 |= (1 << 6);
     ESP_USART->CR1.RXNEIE = 1;
+    TIM3->DIER |= 1;
     
     // Initialize ring buffer
     init_ring_buffer();
     flush_buffer();
+
+    init_moisture_sensor();
+    flush_moisture_buffer();
+    setWaterTime(30); // Initial water time set to 30 secs, can be changed through website
+    setProbeInterval(initial_probe_interval); // Set probe interval
+
+    // Initialize moisture threshold to 10%
+    setMoistureThreshold(10);
 
     // Initialize ESP
     delay_millis(DELAY_TIM, 1000);
@@ -129,8 +133,6 @@ int main(void) {
     // Set up temporary buffers for requests
     uint8_t volatile http_request[BUFFER_SIZE] = "";
     uint8_t volatile temp_str[BUFFER_SIZE] = "";
-    uint16_t samples = 1;
-    uint16_t sound[samples];
     
     while(1) {
         // Clear temp_str buffer
@@ -165,16 +167,23 @@ int main(void) {
                 serveWebpage("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
                 serveWebpage("<title>ESP8266 Demo</title>");
                 serveWebpage("<style> body {background-color: #1c87c9; text-align: center;}</style>");
-                serveWebpage("<h3>ESP8266</h3>");
-                serveWebpage("<p>Welcome to MicroPs IoT lab!</p>");
+                serveWebpage("<h3>IoT Plant Watering</h3>");
+
+                serveWebpage("<p>Last measured values: ");
+                for (int i = 0; i < _moisture_buffer->tail; ++i) {
+                    uint8_t val[10] = "";
+                    sprintf(val, "%d, ", _moisture_buffer->buffer[i]);
+                    serveWebpage(val);
+                }
+                serveWebpage("</p>");
 
                 // Read if LED is on or off and display to webpage.
-                if(record_req){
-                    serveWebpage("<p>Recording in process, wait a few seconds</p>");
-                    serveWebpage("<form action=\"REQ=REL\"><input type=\"submit\" value = \"Reload\"></form>");
-                } else {
-                    serveWebpage("<form action=\"REQ=REC\"><input type=\"submit\" value = \"Begin Recording\"></form>");
-                }
+                // if(record_req){
+                //     serveWebpage("<p>Recording in process, wait a few seconds</p>");
+                //     serveWebpage("<form action=\"REQ=REL\"><input type=\"submit\" value = \"Reload\"></form>");
+                // } else {
+                //     serveWebpage("<form action=\"REQ=REC\"><input type=\"submit\" value = \"Begin Recording\"></form>");
+                // }
 
                 // Close connection
                 sendCommand("AT+CIPCLOSE=0");
@@ -190,16 +199,6 @@ int main(void) {
                     sendString(TERM_USART, "\r\n");
                 }
                 */
-               if (record_req) {
-                    uint16_t moistureADC = ADCmeasure();
-                    //sendString(TERM_USART, "\r\nV[:100]=");
-                    
-                    uint8_t moisture[10] = "";
-                    sprintf(moisture, "%d, ", moisturePercentage(moistureADC));
-                    sendString(TERM_USART, moisture);
-                    
-                    sendString(TERM_USART, "\r\n");
-                }
             }
         }
     }
