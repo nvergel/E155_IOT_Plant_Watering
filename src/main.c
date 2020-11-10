@@ -4,7 +4,7 @@
 #include "UARTRingBuffer.h"
 #include "Moisture_Sensor.h"
 
-#define initial_probe_interval 30
+#define initial_probe_interval 60
 
 void sendCommand(uint8_t* cmd) {
     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
@@ -168,6 +168,10 @@ int main(void) {
                 serveWebpage("<title>ESP8266 Demo</title>");
                 serveWebpage("<style> body {background-color: #1c87c9; text-align: center;}</style>");
                 serveWebpage("<h3>IoT Plant Watering</h3>");
+                serveWebpage("<form action=\"REQ\">");
+                serveWebpage("<label for=\"MT\">Moisture Threshold:</label>");
+                serveWebpage("<input type=\"number\" id=\"quantity\" name=\"quantity\" min=\"1\" max=\"99\" style=\"width:2rem;\">");
+                serveWebpage("<input type=\"submit\"></form>");
 
                 serveWebpage("<p>Last measured values: ");
                 for (int i = 0; i < _moisture_buffer->tail; ++i) {
@@ -176,14 +180,6 @@ int main(void) {
                     serveWebpage(val);
                 }
                 serveWebpage("</p>");
-
-                // Read if LED is on or off and display to webpage.
-                // if(record_req){
-                //     serveWebpage("<p>Recording in process, wait a few seconds</p>");
-                //     serveWebpage("<form action=\"REQ=REL\"><input type=\"submit\" value = \"Reload\"></form>");
-                // } else {
-                //     serveWebpage("<form action=\"REQ=REC\"><input type=\"submit\" value = \"Begin Recording\"></form>");
-                // }
 
                 // Close connection
                 sendCommand("AT+CIPCLOSE=0");

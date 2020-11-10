@@ -15,6 +15,9 @@ uint8_t moisturePercentage(uint16_t moistureADC){
 
 void probe(){
     uint16_t moistureADC = ADCmeasure();
+    while (moistureADC == 2048) {
+        moistureADC = ADCmeasure();
+    }
     uint8_t moisture = moisturePercentage(moistureADC);
     _moisture_buffer->buffer[_moisture_buffer->tail] = moisture;
     ++_moisture_buffer->tail;
