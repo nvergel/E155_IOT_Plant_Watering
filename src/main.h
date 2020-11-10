@@ -26,6 +26,15 @@
 
 
 typedef struct {
+    uint8_t GET : 1;
+    uint8_t FAV : 1;
+    uint8_t MT : 1;
+    uint8_t WT : 1;
+    uint8_t MT_val;
+    uint8_t WT_val;
+} GET_Request;
+
+typedef struct {
     volatile uint32_t IMR;
     volatile uint32_t EMR;
     volatile uint32_t RTSR;
