@@ -4,7 +4,7 @@
 #include "UARTRingBuffer.h"
 #include "Moisture_Sensor.h"
 
-#define initial_probe_interval 60
+#define initial_probe_interval 30
 
 void sendCommand(uint8_t* cmd) {
     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);

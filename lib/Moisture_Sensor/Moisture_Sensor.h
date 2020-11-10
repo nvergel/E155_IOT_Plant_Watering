@@ -6,9 +6,10 @@
 #define MOISTURE_BUFFER_SIZE 512
 
 //Moisture defines
-#define dry 3425
-#define wet 1900
-#define diff dry - wet
+// #define dry 3425
+// #define wet 1900
+#define dry 3550
+#define wet 2138
 
 #define WATER_PUMP GPIO_PA5
 

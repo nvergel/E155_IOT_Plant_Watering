@@ -10,7 +10,7 @@ void init_moisture_sensor(){
 }
 
 uint8_t moisturePercentage(uint16_t moistureADC){
-    return (moistureADC - wet)/diff;
+    return (dry - moistureADC)*100/(dry - wet);
 }
 
 void probe(){
