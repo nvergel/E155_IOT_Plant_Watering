@@ -6,7 +6,7 @@ moisture_buffer buffer = {{0}, 0};
 
 void init_moisture_sensor(){
     _moisture_buffer = &buffer;
-    pinMode(GPIOA, WATER_PUMP, GPIO_INPUT);
+    //pinMode(GPIOA, WATER_PUMP, GPIO_INPUT);
 }
 
 uint8_t moisturePercentage(uint16_t moistureADC){
@@ -33,7 +33,7 @@ void waterPlant(uint8_t moisture) {
         digitalWrite(GPIOA, WATER_PUMP, 1);
 
         // delay micros is actualy delay secs for tim3
-        delay_micros(TIM3, WATER_TIME_SECONDS);
+        delay_millis(TIM3, WATER_TIME_SECONDS);
 
         // End plant watering
         digitalWrite(GPIOA, WATER_PUMP, 0);

@@ -16,6 +16,7 @@
 #include "STM32F401RE_1WIRE.h"
 #include "STM32F401RE_USART.h"
 #include "STM32F401RE_ADC.h"
+#include "Moisture_Sensor.h"
 
 
 #endif

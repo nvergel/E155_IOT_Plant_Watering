@@ -142,6 +142,8 @@ int main(void) {
 
     // Enable GPIOA clock
     RCC->AHB1ENR.GPIOAEN = 1;
+    //set PA5 "WATER_PUMP" to output mode
+    pinMode(GPIOA, WATER_PUMP, GPIO_OUTPUT);
 
     // Initialize timer
     RCC->APB1ENR |= (1 << 0); // TIM2_EN
