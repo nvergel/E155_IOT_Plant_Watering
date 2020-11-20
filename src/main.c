@@ -192,8 +192,6 @@ int main(void) {
     init_ring_buffer();
     flush_buffer();
 
-    init_moisture_sensor();
-    flush_moisture_buffer();
     setWaterTime(30); // Initial water time set to 30 secs, can be changed through website
     setProbeInterval(initial_probe_interval); // Set probe interval
 
@@ -279,11 +277,8 @@ int main(void) {
 
                 // Stats
                 serveWebpage("<p>Last measured value: ");
-                for (int i = 0; i < _moisture_buffer->tail; ++i) {
-                    sprintf(paramHolder, "%d", _moisture_buffer->buffer[i]);
-                    serveWebpage(paramHolder);
-                    break;
-                }
+                sprintf(paramHolder, "%d", moisture);
+                serveWebpage(paramHolder);
                 serveWebpage("%</p>");
 
                 serveWebpage(htmlClose);

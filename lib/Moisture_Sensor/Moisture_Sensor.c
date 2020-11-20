@@ -2,13 +2,6 @@
 #include "STM32F401RE.h"
 #include <string.h>
 
-moisture_buffer buffer = {{0}, 0};
-
-void init_moisture_sensor(){
-    _moisture_buffer = &buffer;
-    //pinMode(GPIOA, WATER_PUMP, GPIO_INPUT);
-}
-
 uint8_t moisturePercentage(uint16_t moistureADC){
     return (dry - moistureADC)*100/(dry - wet);
 }
@@ -18,9 +11,7 @@ void probe(){
     while (moistureADC == 2048) {
         moistureADC = ADCmeasure();
     }
-    uint8_t moisture = moisturePercentage(moistureADC);
-    _moisture_buffer->buffer[_moisture_buffer->tail] = moisture;
-    ++_moisture_buffer->tail;
+    moisture = moisturePercentage(moistureADC);
     //waterPlant(moisture);
 }
 
@@ -57,9 +48,4 @@ void setWaterTime(uint8_t waterTimeSeconds) {
 void setProbeInterval(uint8_t probeInterval) {
     PROBE_INTERVAL = probeInterval;
     setTimer(TIM3, PROBE_INTERVAL);
-}
-
-void flush_moisture_buffer(void){
-    memset(_moisture_buffer->buffer, '\0', MOISTURE_BUFFER_SIZE);
-    _moisture_buffer->tail = 0;
 }
