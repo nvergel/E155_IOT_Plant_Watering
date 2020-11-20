@@ -21,7 +21,7 @@ void probe(){
     uint8_t moisture = moisturePercentage(moistureADC);
     _moisture_buffer->buffer[_moisture_buffer->tail] = moisture;
     ++_moisture_buffer->tail;
-    waterPlant(moisture);
+    //waterPlant(moisture);
 }
 
 void waterPlant(uint8_t moisture) {

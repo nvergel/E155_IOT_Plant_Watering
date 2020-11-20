@@ -6,6 +6,30 @@
 
 #define initial_probe_interval 60
 
+uint8_t htmlOpen[] = 
+"<!DOCTYPE html>\
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
+<title>IoT Plant Watering</title>\
+<style> html{height: 100%;} body {text-align: center; margin-top: 0; height: 100%;}\
+        input {width:1.5rem;}\
+        div {background-color: #1c87c9; width: 50%; margin-left: 25%; height: 100%; top: 10%}\
+        button {margin-left: 10rem; width:revert;}\
+        input {background-color: #2990cf; width: 2rem}\
+        h3 {margin: 0}\
+</style>\
+<div>\
+<h3>IoT Plant Watering</h3>";
+
+uint8_t htmlClose[] = 
+"</div>\
+<script>\
+function updateData(input) {\
+    const params = new URLSearchParams();\
+    params.append(input, document.getElementById(input).value);\
+    fetch(new Request('', {headers: params})).then(console.log(\"done\"));\
+}\
+</script>";
+
 void sendCommand(uint8_t* cmd) {
     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
     USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
@@ -48,16 +72,12 @@ void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     sendCommand("AT+CIFSR");
 }
 
-/** Send command to ESP and echo to the terminal.
-    @param C-string (i.e., pointer to start of a null-terminated array
-        of characters.
-*/
 void serveWebpage(uint8_t str []) {
     int str_length = strlen(str)+2;
     uint8_t cmd[512] = "";
 
     // Send HTML
-    sprintf(cmd, "AT+CIPSEND=0,%d", str_length);
+    sprintf(cmd, "AT+CIPSENDBUF=0,%d", str_length);
     sendCommand(cmd);
 
     sendCommand(str);
@@ -105,7 +125,7 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
             break;
         }
         // Search for moisture threshold
-        if (char1 == 'M' && char2 == 'T' && char3 == '=') {
+        if (char1 == 'M' && char2 == 'T' && char3 == ':') {
             get_request->MT = 1;
             if (buffer[i] == ' ') { // Empty form
                 get_request->MT = 0;
@@ -117,7 +137,7 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
             }
         }
         // Search for water time
-        if (char1 == 'W' && char2 == 'T' && char3 == '=') {
+        if (char1 == 'W' && char2 == 'T' && char3 == ':') {
             get_request->WT = 1;
             if (buffer[i] == ' ') { // Empty form
                 get_request->WT = 0;
@@ -192,37 +212,41 @@ int main(void) {
     GET_Request get_request;
     
     while(1) {
-        // Clear temp_str buffer
         memset(http_request, 0, BUFFER_SIZE);
+
+        // Clear temp_str buffer
         get_request.GET = 0;
         get_request.FAV = 0;
         get_request.MT = 0;
 
         // Loop through and read any data available in the buffer
+        // while(!is_data_available());?
         if(is_data_available()) {
+            
             do{
                 memset(temp_str, 0, BUFFER_SIZE);
                 readString(ESP_USART, temp_str); // Read in available bytes
                 strcat(http_request, temp_str); // Append to current http_request string
                 // http_req_len = strlen(http_request); // Store length of request
                 delay_millis(DELAY_TIM, CMD_DELAY_MS); // Delay
+                sendString(TERM_USART, temp_str);
             } while(is_data_available()); // Check for end of transaction
 
             // Echo received string to the terminal
-            sendString(TERM_USART, http_request);
+            // sendString(TERM_USART, http_request);
 
             parseRequest(http_request, &get_request);
 
             // Debug code
-            uint8_t cmd[15] = "";
-            sprintf(cmd, "\nGET %d\n", get_request.GET);
-            sendString(TERM_USART, cmd);
-            sprintf(cmd, "Fav %d\n", get_request.FAV);
-            sendString(TERM_USART, cmd);
-            sprintf(cmd, "MT %d\n", get_request.MT);
-            sendString(TERM_USART, cmd);
-            sprintf(cmd, "Val %d\n", get_request.MT_val);
-            sendString(TERM_USART, cmd);
+            // uint8_t cmd[15] = "";
+            // sprintf(cmd, "\nGET %d\n", get_request.GET);
+            // sendString(TERM_USART, cmd);
+            // sprintf(cmd, "Fav %d\n", get_request.FAV);
+            // sendString(TERM_USART, cmd);
+            // sprintf(cmd, "MT %d\n", get_request.MT);
+            // sendString(TERM_USART, cmd);
+            // sprintf(cmd, "Val %d\n", get_request.MT_val);
+            // sendString(TERM_USART, cmd);
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
@@ -232,54 +256,37 @@ int main(void) {
                 setWaterTime(get_request.MT_val);
             }
 
-            // Search to see if there was a GET request
-            // volatile uint8_t get_request1 = look_for_substring("GET", http_request);
-            // volatile uint8_t favicon_req = look_for_substring("favicon", http_request);
-
             // If a GET request, process the request
             if(get_request.GET && !get_request.FAV){
-                // Look for "REQ" in http_request
-                // volatile uint8_t button_req = look_for_substring("REQ", http_request);
-                // volatile uint8_t record_req = look_for_substring("=REC", http_request);
-
                 // Serve the individual HTML commands for the webpage
-                serveWebpage("<!DOCTYPE html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
-                serveWebpage("<title>IoT Plant Watering</title><style> body {background-color: #1c87c9; text-align: center;} input {width:1.5rem;}</style>");
-                serveWebpage("<h3>IoT Plant Watering</h3><form>");
+                serveWebpage(htmlOpen);
 
-                serveWebpage("<label for=\"MT\">Moisture Threshold:</label>");
-                serveWebpage("<input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"99\"");
-                uint8_t val[15] = "";
-                sprintf(val, "value=\"%d\">", moistureThreshold);
-                serveWebpage(val);
+                // Adjustable params
+                uint8_t paramHolder[15] = "";
 
-                serveWebpage("<br><br><label for=\"WT\">Water Time:</label>");
-                serveWebpage("<input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"99\"");
-                sprintf(val, "value=\"%d\">", WATER_TIME_SECONDS);
-                serveWebpage(val);
+                serveWebpage("<label for=\"MT\">Moisture Threshold(%):</label>\
+                              <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"99\"");
+                sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
+                serveWebpage(paramHolder);
+                serveWebpage("<br><br><button onclick=\"updateData(\'MT\')\">Submit</button>");
 
-                serveWebpage("<br><br><input type=\"submit\" style=\"margin-left: 10rem; width:revert;\"></form>");
+                serveWebpage("<br><br><label for=\"WT\">Water Time(sec):</label>\
+                              <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"99\"");
+                sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
+                serveWebpage(paramHolder);
 
-                serveWebpage("<p>Last measured values: ");
+                serveWebpage("<br><br><button onclick=\"updateData(\'WT\')\">Submit</button>");
+
+                // Stats
+                serveWebpage("<p>Last measured value: ");
                 for (int i = 0; i < _moisture_buffer->tail; ++i) {
-                    uint8_t val[10] = "";
-                    sprintf(val, "%d, ", _moisture_buffer->buffer[i]);
-                    serveWebpage(val);
+                    sprintf(paramHolder, "%d", _moisture_buffer->buffer[i]);
+                    serveWebpage(paramHolder);
+                    break;
                 }
-                serveWebpage("</p>");
+                serveWebpage("%</p>");
 
-                /*
-                if (record_req) {
-                    ADCmeasure(sound, samples);
-                    sendString(TERM_USART, "\r\nV[:100]=");
-                    for (int i = 0; i < 200; ++i) {
-                        uint8_t cmd[10] = "";
-                        sprintf(cmd, "%d, ", sound[i]);
-                        sendString(TERM_USART, cmd);
-                    }
-                    sendString(TERM_USART, "\r\n");
-                }
-                */
+                serveWebpage(htmlClose);
             }
 
             if (get_request.GET) {

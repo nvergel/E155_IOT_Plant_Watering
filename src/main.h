@@ -17,8 +17,8 @@
 // Wifi Network Info (make sure to keep surrounding double quotes)
 // #define SSID "H8me"
 // #define PASSWORD "03310722ni"
-#define SSID "H8me"
-#define PASSWORD "03310722ni"
+#define SSID "Pepperoni"
+#define PASSWORD "fatboy8211"
 
 #define NVIC_ISER0 ((uint32_t *) 0xE000E100UL)
 #define NVIC_ISER1 ((uint32_t *) 0xE000E104UL)
