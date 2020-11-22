@@ -12,10 +12,11 @@ uint8_t htmlOpen[] =
 <title>IoT Plant Watering</title>\
 <style> html{height: 100%;} body {text-align: center; margin-top: 0; height: 100%;}\
         input {width:1.5rem;}\
-        div {background-color: #1c87c9; width: 50%; margin-left: 25%; height: 100%; top: 10%}\
+        div {background-color: #1c87c9; width: 50%; margin-left: 25%; height: 100%; top: 10%;\
+             box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);}\
         button {margin-left: 10rem; width:revert;}\
-        input {background-color: #2990cf; width: 2rem}\
-        h3 {margin: 0}\
+        input {background-color: #7ec3ed; width: 2rem}\
+        h3 {margin: 0; padding-top: 1rem}\
 </style>\
 <div>\
 <h3>IoT Plant Watering</h3>";
@@ -97,8 +98,14 @@ void USART2_IRQHandler(){
     usart_ISR2(TERM_USART);
 }
 
+/** TIM3 handles probing moisture sensor and watering plant
+ */
 void TIM3_IRQHandler() {
-    probe();
+    if (pumpOn) {
+        stopWaterPlant();
+    } else {
+        probe();
+    }
     TIM3->SR &= ~(0x1); // Clear UIF
 }
 
@@ -199,9 +206,11 @@ int main(void) {
     setMoistureThreshold(10);
 
     // Initialize ESP
-    delay_millis(DELAY_TIM, 1000);
-    initESP8266(ESP_USART, TERM_USART);
-    delay_millis(DELAY_TIM, 500);
+    // delay_millis(DELAY_TIM, 1000);
+    // initESP8266(ESP_USART, TERM_USART);
+    // delay_millis(DELAY_TIM, 500);
+    sendString(TERM_USART, "Uncomment initESP8266 if not initialized");
+
 
     // Set up temporary buffers for requests
     uint8_t volatile http_request[BUFFER_SIZE] = "";
@@ -217,34 +226,24 @@ int main(void) {
         get_request.FAV = 0;
         get_request.MT = 0;
 
+        if (lowMoisture) {
+            waterPlant();
+        }
+
         // Loop through and read any data available in the buffer
-        // while(!is_data_available());?
-        if(is_data_available()) {
+        if (is_data_available()){
             
             do{
                 memset(temp_str, 0, BUFFER_SIZE);
                 readString(ESP_USART, temp_str); // Read in available bytes
                 strcat(http_request, temp_str); // Append to current http_request string
-                // http_req_len = strlen(http_request); // Store length of request
                 delay_millis(DELAY_TIM, CMD_DELAY_MS); // Delay
-                sendString(TERM_USART, temp_str);
             } while(is_data_available()); // Check for end of transaction
 
             // Echo received string to the terminal
-            // sendString(TERM_USART, http_request);
+            sendString(TERM_USART, http_request);
 
             parseRequest(http_request, &get_request);
-
-            // Debug code
-            // uint8_t cmd[15] = "";
-            // sprintf(cmd, "\nGET %d\n", get_request.GET);
-            // sendString(TERM_USART, cmd);
-            // sprintf(cmd, "Fav %d\n", get_request.FAV);
-            // sendString(TERM_USART, cmd);
-            // sprintf(cmd, "MT %d\n", get_request.MT);
-            // sendString(TERM_USART, cmd);
-            // sprintf(cmd, "Val %d\n", get_request.MT_val);
-            // sendString(TERM_USART, cmd);
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
@@ -263,13 +262,13 @@ int main(void) {
                 uint8_t paramHolder[15] = "";
 
                 serveWebpage("<label for=\"MT\">Moisture Threshold(%):</label>\
-                              <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"99\"");
+                                <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"99\"");
                 sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
                 serveWebpage(paramHolder);
                 serveWebpage("<br><br><button onclick=\"updateData(\'MT\')\">Submit</button>");
 
                 serveWebpage("<br><br><label for=\"WT\">Water Time(sec):</label>\
-                              <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"99\"");
+                                <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"99\"");
                 sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
                 serveWebpage(paramHolder);
 

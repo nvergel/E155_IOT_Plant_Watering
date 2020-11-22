@@ -10,7 +10,7 @@
 
 #include "stdint.h"
 #include "STM32F401RE_USART.h"
-#define UART_BUFFER_SIZE 512
+#define UART_BUFFER_SIZE 1024
 
 /** Structure for ring_buffer.
     Contains a uint8_t buffer of length UART_BUFFER_SIZE to hold a string as

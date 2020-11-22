@@ -12,29 +12,34 @@ void probe(){
         moistureADC = ADCmeasure();
     }
     moisture = moisturePercentage(moistureADC);
-    //waterPlant(moisture);
+    if (moisture < moistureThreshold) {
+        lowMoisture = 1;
+    }
 }
 
-void waterPlant(uint8_t moisture) {
-    if (moisture < moistureThreshold) {
-        // Flush buffer?
-        TIM3->DIER &= ~1;
-        
-        // Water plant by turning pump on
-        digitalWrite(GPIOA, WATER_PUMP, 1);
+void waterPlant() {
+    lowMoisture = 0;
 
-        // delay micros is actualy delay secs for tim3
-        delay_millis(TIM3, WATER_TIME_SECONDS);
+    
+    // Water plant by turning pump on
+    digitalWrite(GPIOA, WATER_PUMP, 1);
 
-        // End plant watering
-        digitalWrite(GPIOA, WATER_PUMP, 0);
+    TIM3->DIER &= ~1;
+    setTimer(TIM3, WATER_TIME_SECONDS);
+    TIM3->DIER |= 1;
 
-        // Reset AAR timer
-        setTimer(TIM3, PROBE_INTERVAL);
+    pumpOn = 1;
+}
 
-        // Flush buffer?
-        TIM3->DIER |= 1;
-    }
+void stopWaterPlant() {
+    // End plant watering
+    digitalWrite(GPIOA, WATER_PUMP, 0);
+
+    TIM3->DIER &= ~1;
+    setTimer(TIM3, PROBE_INTERVAL);
+    TIM3->DIER |= 1;
+
+    pumpOn = 0;
 }
 
 void setMoistureThreshold(uint8_t moisture) {

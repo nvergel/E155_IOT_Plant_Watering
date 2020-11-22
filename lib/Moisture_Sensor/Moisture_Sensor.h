@@ -13,10 +13,17 @@
 
 #define WATER_PUMP GPIO_PA5
 
+// Moisture value
 uint8_t moisture;
+
+// Configurables
 uint8_t moistureThreshold;
 uint16_t PROBE_INTERVAL;
 uint16_t WATER_TIME_SECONDS;
+
+// Booleans
+uint8_t pumpOn;
+uint8_t lowMoisture;
 
 /** Convert ADC measure to percentage
  */
