@@ -5,7 +5,7 @@
 #include "STM32F401RE_RCC.h"
 #include "STM32F401RE_GPIO.h"
 
-void ADCInit() {
+void initADC() {
     // Turn on GPIOA clock domains
     RCC->AHB1ENR.GPIOAEN = 1;
     

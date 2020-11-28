@@ -86,7 +86,7 @@ typedef struct {
 // Function prototypes
 ///////////////////////////////////////////////////////////////////////////////
 
-void ADCInit();
+void initADC();
 
 uint16_t ADCmeasure();
 

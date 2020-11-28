@@ -16,7 +16,8 @@ uint8_t htmlOpen[] =
              box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);}\
         button {margin-left: 10rem; width:revert;}\
         input {background-color: #7ec3ed; width: 2rem}\
-        h3 {margin: 0; padding-top: 1rem}\
+        h3 {margin: 0; padding: 1rem}\
+        p {display: inline}\
 </style>\
 <div>\
 <h3>IoT Plant Watering</h3>";
@@ -27,8 +28,14 @@ uint8_t htmlClose[] =
 function updateData(input) {\
     const params = new URLSearchParams();\
     params.append(input, document.getElementById(input).value);\
-    fetch(new Request('', {headers: params})).then(console.log(\"done\"));\
+    fetch(new Request('', {headers: params})).then(window.alert(\"Value successfully updated\"));\
 }\
+const updateParams = new URLSearchParams();\
+updateParams.append(\"LMV\", \"\");\
+setInterval(function(){\
+    fetch(new Request('', {headers: updateParams})).then(response => response.text())\
+    .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
+}, 10000);\
 </script>";
 
 void sendCommand(uint8_t* cmd) {
@@ -109,12 +116,40 @@ void TIM3_IRQHandler() {
     TIM3->SR &= ~(0x1); // Clear UIF
 }
 
+void TIM4_IRQHandler(void) {
+    // Clear update interrupt flag
+    TIM4->SR &= ~(1);
+    
+    // Clear Stream 6 DMA flags
+    DMA2->HIFCR.CDMEIF4 = 1;
+    DMA2->HIFCR.CFEIF4 = 1;
+    DMA2->HIFCR.CHTIF4 = 1;
+    DMA2->HIFCR.CTCIF4 = 1;
+    DMA2->HIFCR.CTEIF4 = 1;
+    
+    // Reset number of bytes to transmit
+    //DMA_STREAM->NDTR  = (uint16_t) CHAR_ARRAY_SIZE;
+    
+    // Re-enable DMA stream.
+    //DMA_STREAM->CR   |= DMA_SxCR_EN;
+}
+
+uint8_t parseValue(uint8_t *buffer, uint32_t i){
+    uint8_t value = 0;
+    while (buffer[i] != '\r') { // Single digit number
+        value = value*10 + buffer[i] - 48;
+        ++i;
+    } 
+    return value;
+}
+
 void parseRequest(uint8_t *buffer, GET_Request *get_request){
 	uint32_t bufferlength = strlen(buffer);
     uint8_t char1 = buffer[0];
     uint8_t char2 = buffer[1];
     uint8_t char3 = buffer[2];
 	uint32_t i = 3;
+    // i always ahead of char3, buffer[i] =  char4
     
     while (i < bufferlength-2) {
         if (char1 == 'G' && char2 == 'E' && char3 == 'T') {
@@ -129,31 +164,20 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
     while (i < bufferlength-2 && get_request->GET) {
         if (char1 == 'f' && char2 == 'a' && char3 == 'v') {
             get_request->FAV = 1;
-            break;
         }
         // Search for moisture threshold
-        if (char1 == 'M' && char2 == 'T' && char3 == ':') {
+        else if (char1 == 'M' && char2 == 'T' && char3 == ':') {
             get_request->MT = 1;
-            if (buffer[i] == ' ') { // Empty form
-                get_request->MT = 0;
-            }else if(buffer[i+1] == ' ') { // Single digit number
-                get_request->MT_val = buffer[i] - 48; // Convert char to int
-            } else {
-                volatile uint8_t decimalValue = (buffer[i] - 48)*10;
-                get_request->MT_val = decimalValue + buffer[i+1] - 48; // Convert char to int
-            }
+            get_request->MT_val = parseValue(buffer, i+1);
         }
         // Search for water time
-        if (char1 == 'W' && char2 == 'T' && char3 == ':') {
+        else if (char1 == 'W' && char2 == 'T' && char3 == ':') {
             get_request->WT = 1;
-            if (buffer[i] == ' ') { // Empty form
-                get_request->WT = 0;
-            }else if(buffer[i+1] == ' ') { // Single digit number
-                get_request->WT_val = buffer[i] - 48; // Convert char to int
-            } else {
-                volatile uint8_t decimalValue = (buffer[i] - 48)*10;
-                get_request->WT_val = decimalValue + buffer[i+1] - 48; // Convert char to int
-            }
+            get_request->WT_val = parseValue(buffer, i+1);
+        }
+        // Search for water time
+        else if (char1 == 'L' && char2 == 'M' && char3 == 'V') {
+            get_request->LMV = 1;
         }
         char1 = char2;
         char2 = char3;
@@ -182,14 +206,17 @@ int main(void) {
     USART_TypeDef * ESP_USART = initUSART(ESP_USART_ID, 115200);
     USART_TypeDef * TERM_USART = initUSART(TERM_USART_ID, 115200);
 
-    ADCInit();
+    initADC();
+
+    initDMA();
 
     // Configure USART1 interrupt
     // Enable interrupts globally
     __enable_irq();
 
-    // Configure interrupt for TIM3, USART1 and USART2
+    // Configure interrupt for TIM3, TIM4, USART1 and USART2
     *NVIC_ISER0 |= (1 << 29);
+    *NVIC_ISER0 |= (1 << 30);
     *NVIC_ISER1 |= (1 << 5);
     *NVIC_ISER1 |= (1 << 6);
     ESP_USART->CR1.RXNEIE = 1;
@@ -209,7 +236,6 @@ int main(void) {
     // delay_millis(DELAY_TIM, 1000);
     // initESP8266(ESP_USART, TERM_USART);
     // delay_millis(DELAY_TIM, 500);
-    sendString(TERM_USART, "Uncomment initESP8266 if not initialized");
 
 
     // Set up temporary buffers for requests
@@ -225,6 +251,8 @@ int main(void) {
         get_request.GET = 0;
         get_request.FAV = 0;
         get_request.MT = 0;
+        get_request.WT = 0;
+        get_request.LMV = 0;
 
         if (lowMoisture) {
             waterPlant();
@@ -244,47 +272,52 @@ int main(void) {
             sendString(TERM_USART, http_request);
 
             parseRequest(http_request, &get_request);
+            uint8_t paramHolder[15] = "";
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
+                sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
+                sendString(TERM_USART, paramHolder);
+                serveWebpage("");
+                sendCommand("AT+CIPCLOSE=0");
+            }
+            
+            if ( get_request.WT) {
+                setWaterTime(get_request.WT_val);
+                sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
+                sendString(TERM_USART, paramHolder);
+                serveWebpage("");
+                sendCommand("AT+CIPCLOSE=0");
             }
 
-            if ( get_request.MT) {
-                setWaterTime(get_request.MT_val);
-            }
-
-            // If a GET request, process the request
-            if(get_request.GET && !get_request.FAV){
+            if (get_request.LMV) {
+                sprintf(paramHolder, "%d", moisture);
+                serveWebpage(paramHolder);
+                sendCommand("AT+CIPCLOSE=0");
+            } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
                 // Serve the individual HTML commands for the webpage
                 serveWebpage(htmlOpen);
 
-                // Adjustable params
-                uint8_t paramHolder[15] = "";
-
                 serveWebpage("<label for=\"MT\">Moisture Threshold(%):</label>\
-                                <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"99\"");
+                                <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"255\"");
                 sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
                 serveWebpage(paramHolder);
                 serveWebpage("<br><br><button onclick=\"updateData(\'MT\')\">Submit</button>");
 
                 serveWebpage("<br><br><label for=\"WT\">Water Time(sec):</label>\
-                                <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"99\"");
+                                <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\"");
                 sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
                 serveWebpage(paramHolder);
 
                 serveWebpage("<br><br><button onclick=\"updateData(\'WT\')\">Submit</button>");
 
                 // Stats
-                serveWebpage("<p>Last measured value: ");
+                serveWebpage("<br><br><p>Last measured value: <p id=\"LMV\">");
                 sprintf(paramHolder, "%d", moisture);
                 serveWebpage(paramHolder);
-                serveWebpage("%</p>");
+                serveWebpage("</p>%</p>");
 
                 serveWebpage(htmlClose);
-            }
-
-            if (get_request.GET) {
-                // Close connection
                 sendCommand("AT+CIPCLOSE=0");
             }
         }

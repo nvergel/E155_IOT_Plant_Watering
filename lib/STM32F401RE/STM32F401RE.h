@@ -14,6 +14,7 @@
 #include "STM32F401RE_TIM.h"
 #include "STM32F401RE_USART.h"
 #include "STM32F401RE_ADC.h"
+#include "STM32F401RE_DMA.h"
 #include "Moisture_Sensor.h"
 
 

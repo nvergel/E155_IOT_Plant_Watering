@@ -30,6 +30,7 @@ typedef struct {
     uint8_t FAV : 1;
     uint8_t MT : 1;
     uint8_t WT : 1;
+    uint8_t LMV : 1;
     uint8_t MT_val;
     uint8_t WT_val;
 } GET_Request;
