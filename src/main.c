@@ -56,28 +56,34 @@ void sendCommand(uint8_t* cmd) {
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    sendCommand("ATE0");
+    sendData("ATE0\r\n", TERM_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
-    sendCommand("AT+CIPMUX=1");
+    sendData("AT+CIPMUX=1\r\n", TERM_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Create TCP server on port 80
-    sendCommand("AT+CIPSERVER=1,80");
+    sendData("AT+CIPSERVER=1,80\r\n", TERM_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Change to mode 3 (AP + station )
-    sendCommand("AT+CWMODE=3");
+    sendData("AT+CWMODE=3\r\n", TERM_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
 
     // Connect to WiFi network
     uint8_t connect_cmd[128] = "";
-    sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"", SSID, PASSWORD);
-    sendCommand(connect_cmd);
+    sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"\r\n", SSID, PASSWORD);
+    sendData(connect_cmd, TERM_USART);
 
     // Wait for connection
     delay_millis(DELAY_TIM, 10000);
 
     // Print out status
-    sendCommand("AT+CIFSR");
+    sendData("AT+CIFSR\r\n", TERM_USART);
+
+    while(1);
 }
 
 void serveWebpage(uint8_t str []) {
@@ -93,17 +99,17 @@ void serveWebpage(uint8_t str []) {
 
 /** Map USART1 IRQ handler to our custom ISR
  */
-void USART1_IRQHandler(){
-    USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
-    usart_ISR(ESP_USART);
-}
+// void USART1_IRQHandler(){
+//     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
+//     usart_ISR(ESP_USART);
+// }
 
-/** Map USART2 IRQ handler to our custom ISR
- */
-void USART2_IRQHandler(){
-    USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
-    usart_ISR2(TERM_USART);
-}
+// /** Map USART2 IRQ handler to our custom ISR
+//  */
+// void USART2_IRQHandler(){
+//     USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
+//     usart_ISR2(TERM_USART);
+// }
 
 /** TIM3 handles probing moisture sensor and watering plant
  */
@@ -114,24 +120,6 @@ void TIM3_IRQHandler() {
         probe();
     }
     TIM3->SR &= ~(0x1); // Clear UIF
-}
-
-void TIM4_IRQHandler(void) {
-    // Clear update interrupt flag
-    TIM4->SR &= ~(1);
-    
-    // Clear Stream 6 DMA flags
-    DMA2->HIFCR.CDMEIF4 = 1;
-    DMA2->HIFCR.CFEIF4 = 1;
-    DMA2->HIFCR.CHTIF4 = 1;
-    DMA2->HIFCR.CTCIF4 = 1;
-    DMA2->HIFCR.CTEIF4 = 1;
-    
-    // Reset number of bytes to transmit
-    //DMA_STREAM->NDTR  = (uint16_t) CHAR_ARRAY_SIZE;
-    
-    // Re-enable DMA stream.
-    //DMA_STREAM->CR   |= DMA_SxCR_EN;
 }
 
 uint8_t parseValue(uint8_t *buffer, uint32_t i){
@@ -199,6 +187,7 @@ int main(void) {
     // Initialize timer
     RCC->APB1ENR |= (1 << 0); // TIM2_EN
     RCC->APB1ENR |= (1 << 1); // TIM3_EN
+    // RCC->APB1ENR |= (1 << 2); // TIM4_EN
     initTIM(DELAY_TIM);
     setTimer(TIM3, initial_probe_interval); // Probe every minute
 
@@ -210,16 +199,14 @@ int main(void) {
 
     initDMA();
 
-    // Configure USART1 interrupt
     // Enable interrupts globally
     __enable_irq();
 
-    // Configure interrupt for TIM3, TIM4, USART1 and USART2
+    // Configure interrupt for TIM3, USART1 and USART2
     *NVIC_ISER0 |= (1 << 29);
-    *NVIC_ISER0 |= (1 << 30);
-    *NVIC_ISER1 |= (1 << 5);
-    *NVIC_ISER1 |= (1 << 6);
-    ESP_USART->CR1.RXNEIE = 1;
+    // *NVIC_ISER1 |= (1 << 5);
+    // *NVIC_ISER1 |= (1 << 6);
+    // ESP_USART->CR1.RXNEIE = 1;
     TIM3->DIER |= 1;
     
     // Initialize ring buffer
@@ -233,9 +220,9 @@ int main(void) {
     setMoistureThreshold(10);
 
     // Initialize ESP
-    // delay_millis(DELAY_TIM, 1000);
-    // initESP8266(ESP_USART, TERM_USART);
-    // delay_millis(DELAY_TIM, 500);
+    delay_millis(DELAY_TIM, 1000);
+    initESP8266(ESP_USART, TERM_USART);
+    delay_millis(DELAY_TIM, 500);
 
 
     // Set up temporary buffers for requests
