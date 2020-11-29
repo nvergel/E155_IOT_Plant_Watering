@@ -56,11 +56,8 @@ void sendCommand(uint8_t* cmd) {
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    while(1) {
-        sendData("ATE0\r\n", ESP_USART);
-        delay_millis(DELAY_TIM, CMD_DELAY_MS);
-        delay_millis(DELAY_TIM, 500);
-    }
+    sendData("ATE0\r\n", ESP_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
     sendData("AT+CIPMUX=1\r\n", ESP_USART);
