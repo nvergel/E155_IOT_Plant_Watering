@@ -291,7 +291,7 @@ int main(void) {
                 uint8_t cmd1[25] = "";
                 sprintf(cmd1, "AT+CIPSENDBUF=0,%d\r\n", paramLen);
                 uint16_t cmd1Len = strlen(cmd1);
-                sendData(cmd1, cmd1, ESP_USART);
+                sendData(cmd1, cmd1Len, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData(paramHolder, paramLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
