@@ -21,13 +21,13 @@ uint8_t htmlPage[] =
 </style>\
 <div>\
 <h3>IoT Plant Watering</h3>\
-    <label for=\"MT\">Moisture Threshold (current value at xxx%):</label>\
-    <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"255\" value=\"1\">\
+    <label for=\"MT\">Moisture Threshold(%):</label>\
+    <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"255\" value=xxx  >\
     <br><br><button onclick=\"updateData(\'MT\')\">Submit</button><br><br>\
-    <label for=\"WT\">Water Time (current value at xxxsec):</label>\
-    <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=\"1\">\
+    <label for=\"WT\">Water Time(sec):</label>\
+    <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=xxx  >\
     <br><br><button onclick=\"updateData(\'WT\')\">Submit</button><br><br>\
-    <p>Last measured value: <p id=\"LMV\">xxx</p>%</p>\
+    <p>Last measured value: <p id=\"LMV\">xxx  </p>%</p>\
 </div>\
 <script>\
 function updateData(input) {\
@@ -165,7 +165,7 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
 }
 
 void updateVal(uint8_t* htmlPos, uint8_t* val) {
-    for (uint8_t i = 0; i < 3; ++i) {
+    for (uint8_t i = 0; i < 5; ++i) {
         htmlPos[i] = val[i];
     }
 }
@@ -247,10 +247,10 @@ int main(void) {
     }
 
     uint8_t paramHolder[5] = "";
-    sprintf(paramHolder, "%d  ", moistureThreshold);
+    sprintf(paramHolder, "\"%d\"", moistureThreshold);
     updateVal(get_request.ptrMT, paramHolder);
 
-    sprintf(paramHolder, "%d  ", WATER_TIME_SECONDS);
+    sprintf(paramHolder, "\"%d\"", WATER_TIME_SECONDS);
     updateVal(get_request.ptrWT, paramHolder);
 
     sprintf(paramHolder, "%d  ", moisture);
@@ -258,7 +258,6 @@ int main(void) {
 
     while(1) {
         memset(http_request, 0, BUFFER_SIZE);
-        //http_request[0] = "\0";
 
         // Clear temp_str buffer
         get_request.GET = 0;
@@ -285,21 +284,18 @@ int main(void) {
             printData(http_request);
 
             parseRequest(http_request, &get_request);
-            uint8_t paramHolder[15] = "";
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
-                // sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
-                // sendString(TERM_USART, paramHolder);
-                // serveWebpage("");
+                sprintf(paramHolder, "\"%d\"", moistureThreshold);
+                updateVal(get_request.ptrMT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             }
             
             if ( get_request.WT) {
                 setWaterTime(get_request.WT_val);
-                //sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
-                //sendString(TERM_USART, paramHolder);
-                //serveWebpage("");
+                sprintf(paramHolder, "\"%d\"", WATER_TIME_SECONDS);
+                updateVal(get_request.ptrWT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             }
 
@@ -308,7 +304,6 @@ int main(void) {
                 sendData(paramHolder, strlen(paramHolder), ESP_USART);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
-                printData("Get request received, sending html page");
                 sendData(cmd, cmdLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData(htmlPage, get_request.htmlLen, ESP_USART);
