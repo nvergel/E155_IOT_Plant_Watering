@@ -56,7 +56,7 @@ void sendCommand(uint8_t* cmd) {
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    sendData("ATE0\r\n", ESP_USART);
+    sendData("ATE1\r\n", ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
@@ -73,6 +73,12 @@ void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
 
 
     // Connect to WiFi network
+
+
+    // Print out status
+    sendData("AT+CIFSR\r\n", ESP_USART);
+    delay_millis(DELAY_TIM, CMD_DELAY_MS);
+   //sendCommand("AT+CIFSR");
     uint8_t connect_cmd[128] = "";
     sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"\r\n", SSID, PASSWORD);
     sendData(connect_cmd, ESP_USART);
@@ -80,19 +86,19 @@ void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Wait for connection
     delay_millis(DELAY_TIM, 10000);
 
-    // Print out status
-    sendData("AT+CIFSR\r\n", ESP_USART);
+
 }
 
 void serveWebpage(uint8_t str []) {
+    USART_TypeDef * ESP_USART = initUSART(ESP_USART_ID, 115200);
     int str_length = strlen(str)+2;
-    uint8_t cmd[512] = "";
+    uint8_t cmd[620] = "";
 
     // Send HTML
     sprintf(cmd, "AT+CIPSENDBUF=0,%d", str_length);
-    sendCommand(cmd);
-
-    sendCommand(str);
+    //sendData(cmd, ESP_USART);
+    sendData(cmd, ESP_USART);
+    sendData(str, ESP_USART);
 }
 
 /** Map USART1 IRQ handler to our custom ISR
@@ -263,7 +269,7 @@ int main(void) {
                 sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
                 sendString(TERM_USART, paramHolder);
                 serveWebpage("");
-                sendCommand("AT+CIPCLOSE=0");
+                sendData("AT+CIPCLOSE=0", ESP_USART);
             }
             
             if ( get_request.WT) {
@@ -271,13 +277,13 @@ int main(void) {
                 sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
                 sendString(TERM_USART, paramHolder);
                 serveWebpage("");
-                sendCommand("AT+CIPCLOSE=0");
+                sendData("AT+CIPCLOSE=0", ESP_USART);
             }
 
             if (get_request.LMV) {
                 sprintf(paramHolder, "%d", moisture);
                 serveWebpage(paramHolder);
-                sendCommand("AT+CIPCLOSE=0");
+                sendData("AT+CIPCLOSE=0", ESP_USART);
             } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
                 // Serve the individual HTML commands for the webpage
                 serveWebpage(htmlOpen);
@@ -302,7 +308,7 @@ int main(void) {
                 serveWebpage("</p>%</p>");
 
                 serveWebpage(htmlClose);
-                sendCommand("AT+CIPCLOSE=0");
+                sendData("AT+CIPCLOSE=0", ESP_USART);
             }
         }
     }
