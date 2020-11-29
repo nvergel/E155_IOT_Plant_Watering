@@ -41,21 +41,6 @@ void initDMA() {
 
     DMA1_STREAM6->PAR   = (uint32_t) &(USART2->DR);
     DMA2_STREAM7->PAR   = (uint32_t) &(USART1->DR);
-
-    // Setup Rx for ESP
-    // DMA2_STREAM5->CR.EN = 0;
-    // // Channel 4
-    // DMA2_STREAM5->CR.CHSEL = 4;
-    // // Set byte size
-    // DMA2_STREAM5->CR.PSIZE = 0;
-    // DMA2_STREAM5->CR.MSIZE = 0;
-    // // peripheral to memory (Rx)
-    // DMA2_STREAM5->CR.DIR = 0;
-    // DMA2_STREAM5->CR.CIRC = 0;
-    // // Memory pointer increment
-    // DMA2_STREAM5->CR.MINC = 0;
-    // // High priority level
-    // DMA2_STREAM5->CR.PL = 2;
 }
 
 void printData(uint8_t* str) {

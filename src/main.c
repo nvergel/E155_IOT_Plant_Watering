@@ -43,20 +43,6 @@ setInterval(function(){\
 }, 10000);\
 </script>\r\n";
 
-// void sendCommand(uint8_t* cmd) {
-//     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
-//     USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
-
-//     sendString(ESP_USART, cmd);
-//     sendString(ESP_USART, "\r\n");
-//     while(!transmitBufferEmpty());
-
-//     uint8_t volatile str[512] = "";
-//     readString(ESP_USART, str);
-//     sendString(TERM_USART, str);
-//     delay_millis(DELAY_TIM, CMD_DELAY_MS);
-// }
-
 /** Initialize the ESP and print out IP address to terminal
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
@@ -87,19 +73,12 @@ void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     sendData("AT+CIFSR\r\n", 10, ESP_USART);
 }
 
-/** Map USART1 IRQ handler to our custom ISR
+/** Map USART1 IRQ handler to our custom ISR for ESP Rx
  */
 void USART1_IRQHandler(){
     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
     usart_ISR(ESP_USART);
 }
-
-// /** Map USART2 IRQ handler to our custom ISR
-//  */
-// void USART2_IRQHandler(){
-//     USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
-//     usart_ISR2(TERM_USART);
-// }
 
 /** TIM3 handles probing moisture sensor and watering plant
  */
@@ -114,7 +93,7 @@ void TIM3_IRQHandler() {
 
 uint8_t parseValue(uint8_t *buffer, uint32_t i){
     uint8_t value = 0;
-    while (buffer[i] != '\r') { // Single digit number
+    while (buffer[i] != '\r') {
         value = value*10 + buffer[i] - 48;
         ++i;
     } 
@@ -246,11 +225,11 @@ int main(void) {
         }
     }
 
-    uint8_t paramHolder[5] = "";
-    sprintf(paramHolder, "\"%d\"", moistureThreshold);
+    uint8_t paramHolder[7] = "";
+    sprintf(paramHolder, "\"%d\"  ", moistureThreshold);
     updateVal(get_request.ptrMT, paramHolder);
 
-    sprintf(paramHolder, "\"%d\"", WATER_TIME_SECONDS);
+    sprintf(paramHolder, "\"%d\"  ", WATER_TIME_SECONDS);
     updateVal(get_request.ptrWT, paramHolder);
 
     sprintf(paramHolder, "%d  ", moisture);
@@ -287,21 +266,24 @@ int main(void) {
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
-                sprintf(paramHolder, "\"%d\"", moistureThreshold);
+                sprintf(paramHolder, "\"%d\"  ", moistureThreshold);
                 updateVal(get_request.ptrMT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
             }
             
             if ( get_request.WT) {
                 setWaterTime(get_request.WT_val);
-                sprintf(paramHolder, "\"%d\"", WATER_TIME_SECONDS);
+                sprintf(paramHolder, "\"%d\"  ", WATER_TIME_SECONDS);
                 updateVal(get_request.ptrWT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
             }
 
             if (get_request.LMV) {
                 sprintf(paramHolder, "%d", moisture);
                 sendData(paramHolder, strlen(paramHolder), ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
                 sendData(cmd, cmdLen, ESP_USART);

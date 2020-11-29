@@ -120,14 +120,7 @@ typedef struct {
 #define DMA2 ((DMA_TypeDef *) DMA2_BASE)
 
 #define DMA1_STREAM6 ((DMA_STREAM *) (DMA1_BASE + 0x10 + 0x18 * 6))
-
-#define DMA2_STREAM5 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 5))
 #define DMA2_STREAM7 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 7))
-
-// const uint16_t REQUEST_SIZE = 512;
-// const uint16_t RESPONSE_SIZE = 2048;
-// const uint8_t getRequest[REQUEST_SIZE];
-// const uint8_t htmlResponse[RESPONSE_SIZE];
 
 ///////////////////////////////////////////////////////////////////////////////
 // Function prototypes

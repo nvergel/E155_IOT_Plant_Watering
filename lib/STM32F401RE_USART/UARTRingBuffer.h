@@ -24,8 +24,6 @@ typedef struct {
 } ring_buffer;
 
 ring_buffer * _rx_buffer;
-ring_buffer * _tx1_buffer;
-ring_buffer * _tx2_buffer;
 
 /** TODO
     Initialize the ring buffer.
@@ -38,16 +36,6 @@ void init_ring_buffer(void);
     @return character if it there is a character to read; otherwise return -1.
  */
 uint8_t read_char_buffer(void);
-
-/** TODO
-   Declaration for function to write charater to the transmit buffer.
-   You need to implement this.
-   It should take a single character, add it to the transmit buffer, and
-   increment head appropriately.
- */
-void write_char_buffer(uint8_t c, ring_buffer * buffer);
-
-uint8_t transmitBufferEmpty();
 
 /** Check if there is data that has not yet been read out of the buffer.
     i.e., check if head is equal to tail.
@@ -64,11 +52,5 @@ void flush_buffer(void);
     call into the correct IRQHandler function to map it to the vector table.
  */
 void usart_ISR(USART_TypeDef * USART);
-void usart_ISR2(USART_TypeDef * USART);
-
-/** Look for a particular string in the given buffer
-    @return 1 if the string is found and 0 if not found
- */
-uint8_t look_for_substring(uint8_t *str, uint8_t *buffertolookinto);
 
 #endif

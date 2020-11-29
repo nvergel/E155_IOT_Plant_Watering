@@ -53,15 +53,6 @@ USART_TypeDef * initUSART(uint8_t USART_ID, uint32_t baud_rate){
     USART->CR2.STOP = 0b00; // 0b00 corresponds to 1 stop bit
     USART->CR1.OVER8 = 0; // Set to 16 times sampling freq
 
-    // Set baud rate to 9.6 kbps
-    // Tx/Rx baud = (f_CK)/(8*(2-OVER8)*USARTDIV) = Tx/Rx baud = (f_CK)/(16*USARTDIV)
-    // f_CK = 84e6 Hz on APB2 (USART1) or 42e6 on APB1 (USART2)
-    // USARTDIV = 546.875 should be in BRR
-    // 546 = 0x0222
-    // 0.875 = 7/8 = 0b1110
-    // DIV_Mantissa = 0x222
-    // DIV_Fraction = 0b111
-
     if(USART_ID == USART1_ID){
         if (baud_rate == 9600){
             USART->BRR.DIV_Mantissa = 546;
@@ -88,29 +79,6 @@ USART_TypeDef * initUSART(uint8_t USART_ID, uint32_t baud_rate){
     USART->CR1.RE = 1; // Enable reception
 
     return USART;
-}
-
-void sendChar(USART_TypeDef * USART, uint8_t data) {
-    while(!USART->SR.TXE);
-    USART->DR.DR = data;
-    while(!USART->SR.TC);
-}
-
-void sendString(USART_TypeDef * USART, uint8_t * charArray){
-    ring_buffer * buffer;
-    if (USART == USART1) {
-        buffer = _tx1_buffer;
-    } else {
-        buffer = _tx2_buffer;
-    }
-    uint32_t i = 0;
-    do{
-        write_char_buffer(charArray[i], buffer);
-        i++;
-    }
-    while(charArray[i] != 0);
-
-    USART->CR1.TXEIE = 1;
 }
 
 uint8_t readChar(USART_TypeDef * USART){
