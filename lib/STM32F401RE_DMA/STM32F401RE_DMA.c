@@ -65,32 +65,26 @@ void printData(uint8_t* str) {
     DMA1_STREAM6->M0AR  = str;
     DMA1_STREAM6->NDTR  = strLen;
     DMA1_STREAM6->CR.EN = 1;
+    while(!DMA1->HISR.TCIF6);
 }
 
-void sendData(uint8_t* cmd, USART_TypeDef* ESP_USART) {
+void sendData(uint8_t* str, uint16_t strLen, USART_TypeDef* ESP_USART) {
     //disable stream 7
     DMA2_STREAM7->CR.EN = 0;
     //set clear transfer complete interrupt flag, clearing it
     DMA2->HIFCR.CTCIF7 = 1;
 
-    // Set data to transfer
-    uint16_t cmdLen = strlen(cmd);
     //set base address from which data will be read/written
-    DMA2_STREAM7->M0AR  = cmd;
+    DMA2_STREAM7->M0AR  = str;
     //set number of data items to be transferred to cmdLen
-    DMA2_STREAM7->NDTR  = cmdLen;
+    DMA2_STREAM7->NDTR  = strLen;
     //enable stream 7
     DMA2_STREAM7->CR.EN = 1;
     //while stream 7 transmit complete interrupt flag is low
     while(!DMA2->HISR.TCIF7);
-
-    // Should print str but using to debug rn
-    // DMA1_STREAM6->M0AR  = cmd;
-    // DMA1_STREAM6->NDTR  = cmdLen;
-    // DMA1_STREAM6->CR.EN = 1;
-    // while(!DMA1->HISR.TCIF6);
+    delay_millis(TIM2, 30);
     
-    uint8_t str[512] = "";
-    readString(ESP_USART, str);
-    printData(str);
+    uint8_t response[512] = "";
+    readString(ESP_USART, response);
+    printData(response);
 }

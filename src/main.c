@@ -6,7 +6,7 @@
 
 #define initial_probe_interval 60
 
-uint8_t htmlOpen[] = 
+uint8_t htmlPage[] = 
 "<!DOCTYPE html>\
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
 <title>IoT Plant Watering</title>\
@@ -20,10 +20,15 @@ uint8_t htmlOpen[] =
         p {display: inline}\
 </style>\
 <div>\
-<h3>IoT Plant Watering</h3>";
-
-uint8_t htmlClose[] = 
-"</div>\
+<h3>IoT Plant Watering</h3>\
+    <label for=\"MT\">Moisture Threshold (current value at xxx%):</label>\
+    <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"255\" value=\"1\">\
+    <br><br><button onclick=\"updateData(\'MT\')\">Submit</button><br><br>\
+    <label for=\"WT\">Water Time (current value at xxxsec):</label>\
+    <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=\"1\">\
+    <br><br><button onclick=\"updateData(\'WT\')\">Submit</button><br><br>\
+    <p>Last measured value: <p id=\"LMV\">xxx</p>%</p>\
+</div>\
 <script>\
 function updateData(input) {\
     const params = new URLSearchParams();\
@@ -36,69 +41,50 @@ setInterval(function(){\
     fetch(new Request('', {headers: updateParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
 }, 10000);\
-</script>";
+</script>\r\n";
 
-void sendCommand(uint8_t* cmd) {
-    USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
-    USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
+// void sendCommand(uint8_t* cmd) {
+//     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
+//     USART_TypeDef * TERM_USART = id2Port(TERM_USART_ID);
 
-    sendString(ESP_USART, cmd);
-    sendString(ESP_USART, "\r\n");
-    while(!transmitBufferEmpty());
+//     sendString(ESP_USART, cmd);
+//     sendString(ESP_USART, "\r\n");
+//     while(!transmitBufferEmpty());
 
-    uint8_t volatile str[512] = "";
-    readString(ESP_USART, str);
-    sendString(TERM_USART, str);
-    delay_millis(DELAY_TIM, CMD_DELAY_MS);
-}
+//     uint8_t volatile str[512] = "";
+//     readString(ESP_USART, str);
+//     sendString(TERM_USART, str);
+//     delay_millis(DELAY_TIM, CMD_DELAY_MS);
+// }
 
 /** Initialize the ESP and print out IP address to terminal
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    sendData("ATE1\r\n", ESP_USART);
+    sendData("ATE0\r\n", 6, ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
-    sendData("AT+CIPMUX=1\r\n", ESP_USART);
+    sendData("AT+CIPMUX=1\r\n", 13, ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Create TCP server on port 80
-    sendData("AT+CIPSERVER=1,80\r\n", ESP_USART);
+    sendData("AT+CIPSERVER=1,80\r\n", 19, ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Change to mode 3 (AP + station )
-    sendData("AT+CWMODE=3\r\n", ESP_USART);
+    sendData("AT+CWMODE=3\r\n", 13, ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
-
-
-    // Connect to WiFi network
-
-
-    // Print out status
-    sendData("AT+CIFSR\r\n", ESP_USART);
-    delay_millis(DELAY_TIM, CMD_DELAY_MS);
-   //sendCommand("AT+CIFSR");
+    
+    // Connect WiFi
     uint8_t connect_cmd[128] = "";
     sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"\r\n", SSID, PASSWORD);
-    sendData(connect_cmd, ESP_USART);
+    uint16_t cmdLen = strlen(connect_cmd);
+    sendData(connect_cmd, cmdLen, ESP_USART);
 
     // Wait for connection
     delay_millis(DELAY_TIM, 10000);
-
-
-}
-
-void serveWebpage(uint8_t str []) {
-    USART_TypeDef * ESP_USART = initUSART(ESP_USART_ID, 115200);
-    int str_length = strlen(str)+2;
-    uint8_t cmd[620] = "";
-
-    // Send HTML
-    sprintf(cmd, "AT+CIPSENDBUF=0,%d", str_length);
-    //sendData(cmd, ESP_USART);
-    sendData(cmd, ESP_USART);
-    sendData(str, ESP_USART);
+    sendData("AT+CIFSR\r\n", 10, ESP_USART);
 }
 
 /** Map USART1 IRQ handler to our custom ISR
@@ -178,6 +164,12 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
     }
 }
 
+void updateVal(uint8_t* htmlPos, uint8_t* val) {
+    for (uint8_t i = 0; i < 3; ++i) {
+        htmlPos[i] = val[i];
+    }
+}
+
 int main(void) {
     // Configure flash latency and set clock to run at 84 MHz
     configureFlash();
@@ -226,6 +218,7 @@ int main(void) {
     delay_millis(DELAY_TIM, 1000);
     initESP8266(ESP_USART, TERM_USART);
     delay_millis(DELAY_TIM, 500);
+    printData("Ready");
 
 
     // Set up temporary buffers for requests
@@ -233,9 +226,39 @@ int main(void) {
     uint8_t volatile temp_str[BUFFER_SIZE] = "";
 
     GET_Request get_request;
-    
+    get_request.htmlLen = strlen(htmlPage) + 1;
+    uint8_t cmd[25] = "";
+    // Send HTML
+    sprintf(cmd, "AT+CIPSENDBUF=0,%d\r\n", get_request.htmlLen);
+    uint16_t cmdLen = strlen(cmd);
+    uint8_t j = 0;
+    for (uint16_t i = 0; j < 3; ++i) {
+        if (htmlPage[i] == 'x' && htmlPage[i+1] == 'x' && htmlPage[i+2] == 'x') {
+            switch (j) {
+                case 0:
+                    get_request.ptrMT = htmlPage+i;
+                case 1:
+                    get_request.ptrWT = htmlPage+i;
+                case 2:
+                    get_request.ptrLMV = htmlPage+i;
+            }
+            ++j;
+        }
+    }
+
+    uint8_t paramHolder[5] = "";
+    sprintf(paramHolder, "%d  ", moistureThreshold);
+    updateVal(get_request.ptrMT, paramHolder);
+
+    sprintf(paramHolder, "%d  ", WATER_TIME_SECONDS);
+    updateVal(get_request.ptrWT, paramHolder);
+
+    sprintf(paramHolder, "%d  ", moisture);
+    updateVal(get_request.ptrLMV, paramHolder);
+
     while(1) {
         memset(http_request, 0, BUFFER_SIZE);
+        //http_request[0] = "\0";
 
         // Clear temp_str buffer
         get_request.GET = 0;
@@ -259,56 +282,39 @@ int main(void) {
             } while(is_data_available()); // Check for end of transaction
 
             // Echo received string to the terminal
-            sendString(TERM_USART, http_request);
+            printData(http_request);
 
             parseRequest(http_request, &get_request);
             uint8_t paramHolder[15] = "";
 
             if ( get_request.MT) {
                 setMoistureThreshold(get_request.MT_val);
-                sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
-                sendString(TERM_USART, paramHolder);
-                serveWebpage("");
-                sendData("AT+CIPCLOSE=0", ESP_USART);
+                // sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
+                // sendString(TERM_USART, paramHolder);
+                // serveWebpage("");
+                sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             }
             
             if ( get_request.WT) {
                 setWaterTime(get_request.WT_val);
-                sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
-                sendString(TERM_USART, paramHolder);
-                serveWebpage("");
-                sendData("AT+CIPCLOSE=0", ESP_USART);
+                //sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
+                //sendString(TERM_USART, paramHolder);
+                //serveWebpage("");
+                sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             }
 
             if (get_request.LMV) {
                 sprintf(paramHolder, "%d", moisture);
-                serveWebpage(paramHolder);
-                sendData("AT+CIPCLOSE=0", ESP_USART);
+                sendData(paramHolder, strlen(paramHolder), ESP_USART);
+                sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
-                // Serve the individual HTML commands for the webpage
-                serveWebpage(htmlOpen);
-
-                serveWebpage("<label for=\"MT\">Moisture Threshold(%):</label>\
-                                <input type=\"number\" id=\"MT\" name=\"MT\" min=\"1\" max=\"255\"");
-                sprintf(paramHolder, "value=\"%d\">", moistureThreshold);
-                serveWebpage(paramHolder);
-                serveWebpage("<br><br><button onclick=\"updateData(\'MT\')\">Submit</button>");
-
-                serveWebpage("<br><br><label for=\"WT\">Water Time(sec):</label>\
-                                <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\"");
-                sprintf(paramHolder, "value=\"%d\">", WATER_TIME_SECONDS);
-                serveWebpage(paramHolder);
-
-                serveWebpage("<br><br><button onclick=\"updateData(\'WT\')\">Submit</button>");
-
-                // Stats
-                serveWebpage("<br><br><p>Last measured value: <p id=\"LMV\">");
-                sprintf(paramHolder, "%d", moisture);
-                serveWebpage(paramHolder);
-                serveWebpage("</p>%</p>");
-
-                serveWebpage(htmlClose);
-                sendData("AT+CIPCLOSE=0", ESP_USART);
+                printData("Get request received, sending html page");
+                sendData(cmd, cmdLen, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
+                sendData(htmlPage, get_request.htmlLen, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
+                sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
             }
         }
     }

@@ -26,6 +26,10 @@
 
 
 typedef struct {
+    uint8_t* ptrMT;
+    uint8_t* ptrWT;
+    uint8_t* ptrLMV;
+    uint16_t htmlLen;
     uint8_t GET : 1;
     uint8_t FAV : 1;
     uint8_t MT : 1;
@@ -58,7 +62,7 @@ typedef struct {
 #define TERM_USART_ID USART2_ID
 #define DELAY_TIM TIM2
 #define CMD_DELAY_MS 30
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 512
 
 ///////////////////////////////////////////////////////////////////////////////
 // IRQn_Type and __NVIC_PRIO_BITS from stm32f401xe.h

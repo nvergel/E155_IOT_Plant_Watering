@@ -121,7 +121,7 @@ typedef struct {
 
 #define DMA1_STREAM6 ((DMA_STREAM *) (DMA1_BASE + 0x10 + 0x18 * 6))
 
-//#define DMA2_STREAM5 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 5))
+#define DMA2_STREAM5 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 5))
 #define DMA2_STREAM7 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 7))
 
 // const uint16_t REQUEST_SIZE = 512;
@@ -134,10 +134,7 @@ typedef struct {
 ///////////////////////////////////////////////////////////////////////////////
 
 void initDMA();
-void sendData(uint8_t* cmd, USART_TypeDef* TERM_USART);
-// USART_TypeDef * initUSART(uint8_t USART_ID, uint32_t baud_rate);
-// void sendChar(USART_TypeDef * USART, uint8_t data);
-// void sendString(USART_TypeDef * USART, uint8_t * charArray);
-// void receiveString(USART_TypeDef * USART, uint8_t * charArray);
+void sendData(uint8_t* str, uint16_t strLen, USART_TypeDef* ESP_USART);
+void printData(uint8_t* str);
 
 #endif
