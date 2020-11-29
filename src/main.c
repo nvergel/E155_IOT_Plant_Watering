@@ -56,32 +56,32 @@ void sendCommand(uint8_t* cmd) {
  */
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    sendData("ATE0\r\n", TERM_USART);
+    sendData("ATE0\r\n", ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
-    sendData("AT+CIPMUX=1\r\n", TERM_USART);
+    sendData("AT+CIPMUX=1\r\n", ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Create TCP server on port 80
-    sendData("AT+CIPSERVER=1,80\r\n", TERM_USART);
+    sendData("AT+CIPSERVER=1,80\r\n", ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
     // Change to mode 3 (AP + station )
-    sendData("AT+CWMODE=3\r\n", TERM_USART);
+    sendData("AT+CWMODE=3\r\n", ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
 
 
     // Connect to WiFi network
     uint8_t connect_cmd[128] = "";
     sprintf(connect_cmd,"AT+CWJAP=\"%s\",\"%s\"\r\n", SSID, PASSWORD);
-    sendData(connect_cmd, TERM_USART);
+    sendData(connect_cmd, ESP_USART);
 
     // Wait for connection
     delay_millis(DELAY_TIM, 10000);
 
     // Print out status
-    sendData("AT+CIFSR\r\n", TERM_USART);
+    sendData("AT+CIFSR\r\n", ESP_USART);
 
     while(1);
 }
@@ -99,10 +99,10 @@ void serveWebpage(uint8_t str []) {
 
 /** Map USART1 IRQ handler to our custom ISR
  */
-// void USART1_IRQHandler(){
-//     USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
-//     usart_ISR(ESP_USART);
-// }
+void USART1_IRQHandler(){
+    USART_TypeDef * ESP_USART = id2Port(ESP_USART_ID);
+    usart_ISR(ESP_USART);
+}
 
 // /** Map USART2 IRQ handler to our custom ISR
 //  */
@@ -187,7 +187,6 @@ int main(void) {
     // Initialize timer
     RCC->APB1ENR |= (1 << 0); // TIM2_EN
     RCC->APB1ENR |= (1 << 1); // TIM3_EN
-    // RCC->APB1ENR |= (1 << 2); // TIM4_EN
     initTIM(DELAY_TIM);
     setTimer(TIM3, initial_probe_interval); // Probe every minute
 
@@ -204,9 +203,9 @@ int main(void) {
 
     // Configure interrupt for TIM3, USART1 and USART2
     *NVIC_ISER0 |= (1 << 29);
-    // *NVIC_ISER1 |= (1 << 5);
+    *NVIC_ISER1 |= (1 << 5);
     // *NVIC_ISER1 |= (1 << 6);
-    // ESP_USART->CR1.RXNEIE = 1;
+    ESP_USART->CR1.RXNEIE = 1;
     TIM3->DIER |= 1;
     
     // Initialize ring buffer

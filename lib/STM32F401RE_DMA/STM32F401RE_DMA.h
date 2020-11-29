@@ -119,9 +119,9 @@ typedef struct {
 #define DMA1 ((DMA_TypeDef *) DMA1_BASE)
 #define DMA2 ((DMA_TypeDef *) DMA2_BASE)
 
-#define DMA1_STREAM6 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 6))
+#define DMA1_STREAM6 ((DMA_STREAM *) (DMA1_BASE + 0x10 + 0x18 * 6))
 
-#define DMA2_STREAM5 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 5))
+//#define DMA2_STREAM5 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 5))
 #define DMA2_STREAM7 ((DMA_STREAM *) (DMA2_BASE + 0x10 + 0x18 * 7))
 
 // const uint16_t REQUEST_SIZE = 512;
