@@ -197,8 +197,6 @@ int main(void) {
     delay_millis(DELAY_TIM, 1000);
     initESP8266(ESP_USART, TERM_USART);
     delay_millis(DELAY_TIM, 500);
-    printData("Ready");
-
 
     // Set up temporary buffers for requests
     uint8_t volatile http_request[BUFFER_SIZE] = "";
@@ -226,14 +224,20 @@ int main(void) {
     }
 
     uint8_t paramHolder[7] = "";
+    
+    // Replace xxx with \"num\"
     sprintf(paramHolder, "\"%d\"  ", moistureThreshold);
     updateVal(get_request.ptrMT, paramHolder);
 
+    // Replace xxx with \"num\"
     sprintf(paramHolder, "\"%d\"  ", WATER_TIME_SECONDS);
     updateVal(get_request.ptrWT, paramHolder);
 
+    // Replace xxx with num
     sprintf(paramHolder, "%d  ", moisture);
     updateVal(get_request.ptrLMV, paramHolder);
+
+    printData("Ready");
 
     while(1) {
         memset(http_request, 0, BUFFER_SIZE);
@@ -282,7 +286,14 @@ int main(void) {
 
             if (get_request.LMV) {
                 sprintf(paramHolder, "%d", moisture);
-                sendData(paramHolder, strlen(paramHolder), ESP_USART);
+                uint16_t paramLen = strlen(paramHolder);
+
+                uint8_t cmd1[25] = "";
+                sprintf(cmd1, "AT+CIPSENDBUF=0,%d\r\n", paramLen);
+                uint16_t cmd1Len = strlen(cmd1);
+                sendData(cmd1, cmd1, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
+                sendData(paramHolder, paramLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
             } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
