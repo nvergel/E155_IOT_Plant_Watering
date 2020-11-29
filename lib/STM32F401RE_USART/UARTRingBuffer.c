@@ -77,16 +77,16 @@ void usart_ISR(USART_TypeDef * USART){
         uint8_t c = USART->DR.DR;
         store_char(c, _rx_buffer);
     }
-    if (USART->SR.TXE && USART->CR1.TXEIE) {
-        sendCharBuffer(USART, _tx1_buffer);
-    }
+    // if (USART->SR.TXE && USART->CR1.TXEIE) {
+    //     sendCharBuffer(USART, _tx1_buffer);
+    // }
 }
 
-void usart_ISR2(USART_TypeDef * USART){
-    if (USART->SR.TXE && USART->CR1.TXEIE) {
-        sendCharBuffer(USART, _tx2_buffer);
-    }
-}
+// void usart_ISR2(USART_TypeDef * USART){
+//     if (USART->SR.TXE && USART->CR1.TXEIE) {
+//         sendCharBuffer(USART, _tx2_buffer);
+//     }
+// }
 
 uint8_t look_for_substring (uint8_t *str, uint8_t *buffertolookinto){
     uint32_t stringlength = strlen(str);

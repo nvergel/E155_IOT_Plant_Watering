@@ -22,21 +22,6 @@ void initADC() {
     ADC1->SQR3 = 0;
 }
 
-// void ADCmeasure(uint16_t* array, int length) {
-//     ADC1->CR2.ADON = 1;
-    
-//     ADC1->CR2.CONT = 1;
-//     ADC1->CR2.SWSTART = 1;
-
-//     for (int i = 0; i < length; ++i) {
-//         while(!ADC1->SR.EOC);
-//         array[i] = ADC1->DR.DR;
-//     }
-    
-//     ADC1->CR2.CONT = 0;
-//     ADC1->CR2.ADON = 0;
-// }
-
 uint16_t ADCmeasure() {
     ADC1->CR2.ADON = 1;
     ADC1->CR2.SWSTART = 1;

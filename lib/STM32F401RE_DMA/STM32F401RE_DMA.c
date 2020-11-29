@@ -56,21 +56,6 @@ void initDMA() {
     // DMA2_STREAM5->CR.MINC = 0;
     // // High priority level
     // DMA2_STREAM5->CR.PL = 2;
-    
-    // // Source: Address of the character array buffer in memory.
-    // DMA2_STREAM5->M0AR  = (uint32_t) &getRequest;
-    // // Dest.: USART data register
-    // DMA2_STREAM5->PAR   = (uint32_t) &(USART1->DR);
-    // // Set DMA data transfer length (# of samples).
-    // DMA2_STREAM5->NDTR  = (uint16_t) REQUEST_SIZE;
-    
-    // // Set DMA source and destination addresses.
-    // // Source: Address of the character array buffer in memory.
-    // DMA2_STREAM7->M0AR  = (uint32_t) &htmlResponse;
-    // // Dest.: USART data register
-    // DMA2_STREAM7->PAR   = (uint32_t) &(USART1->DR);
-    // // Set DMA data transfer length (# of samples).
-    // DMA2_STREAM7->NDTR  = (uint16_t) RESPONSE_SIZE;
 }
 
 void sendData(uint8_t* cmd, USART_TypeDef* ESP_USART) {
@@ -81,27 +66,27 @@ void sendData(uint8_t* cmd, USART_TypeDef* ESP_USART) {
 
     // Set data to transfer
     uint16_t cmdLen = strlen(cmd);
-    DMA2_STREAM7->M0AR  = (uint32_t) &cmd;
-    DMA2_STREAM7->NDTR  = (uint16_t) cmdLen;
-    DMA2_STREAM7->CR.EN = 1;
-    USART1->CR1.TXEIE = 1;
+    // DMA2_STREAM7->M0AR  = (uint32_t) &cmd;
+    // DMA2_STREAM7->NDTR  = (uint16_t) cmdLen;
+    // DMA2_STREAM7->CR.EN = 1;
+    // USART1->CR1.TXEIE = 1;
 
-    while(!DMA2->HISR.TCIF7);
-    USART1->CR1.TXEIE = 0;
+    // while(!DMA2->HISR.TCIF7);
+    // USART1->CR1.TXEIE = 0;
 
     // Should print str but using to debug rn
     DMA1_STREAM6->M0AR  = (uint32_t) &cmd;
     DMA1_STREAM6->NDTR  = (uint16_t) cmdLen;
     DMA1_STREAM6->CR.EN = 1;
-    USART2->CR1.TXEIE = 1;
+    //USART2->CR1.TXEIE = 1;
     while(!DMA1->HISR.TCIF6);
-    USART2->CR1.TXEIE = 0;
+    //USART2->CR1.TXEIE = 0;
     
-    uint8_t volatile str[512] = "";
-    readString(ESP_USART, str);
-    uint16_t strLen = strlen(str);
-    DMA1_STREAM6->M0AR  = (uint32_t) &str;
-    DMA1_STREAM6->NDTR  = (uint16_t) strLen;
-    DMA1_STREAM6->CR.EN = 1;
-    USART2->CR1.TXEIE = 1;
+    // uint8_t volatile str[512] = "";
+    // readString(ESP_USART, str);
+    // uint16_t strLen = strlen(str);
+    // DMA1_STREAM6->M0AR  = (uint32_t) &str;
+    // DMA1_STREAM6->NDTR  = (uint16_t) strLen;
+    // DMA1_STREAM6->CR.EN = 1;
+    // USART2->CR1.TXEIE = 1;
 }
