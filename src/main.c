@@ -47,7 +47,7 @@ teParams.append(\"TW\", \"\");\
 setInterval(function(){\
     fetch(new Request('', {headers: teParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"TE\").innerText = text});\
-}, 10000);\
+}, 1000);\
 </script>\r\n";
 
 /** Initialize the ESP and print out IP address to terminal
@@ -145,7 +145,7 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
         else if (char1 == 'L' && char2 == 'M' && char3 == 'V') {
             get_request->LMV = 1;
         }
-        else if (char1 == 'T' && char2 == 'E' && char3 == ':') {
+        else if (char1 == 'T' && char2 == 'W' && char3 == ':') {
             get_request->TE = 1;
         }
         char1 = char2;
