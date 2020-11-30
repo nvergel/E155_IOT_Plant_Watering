@@ -20,6 +20,7 @@ uint8_t moisture;
 uint8_t moistureThreshold;
 uint16_t PROBE_INTERVAL;
 uint16_t WATER_TIME_SECONDS;
+uint16_t TIME_ELAPSED;
 
 // Booleans
 uint8_t pumpOn;
@@ -39,5 +40,6 @@ void probe();
 void setMoistureThreshold(uint8_t moisture);
 void setWaterTime(uint8_t waterTimeSeconds);
 void setProbeInterval(uint8_t probeInterval);
+void setTimeElapsed(uint16_t timeElapsed);
 
 #endif

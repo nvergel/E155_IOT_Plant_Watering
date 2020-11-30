@@ -36,16 +36,17 @@ void delay_micros(TIM_TypeDef * TIMx, uint32_t us){
 
 void setTimer(TIM_TypeDef * TIMx, uint32_t s) {
   // Set prescaler to give 1 ms time base
-  uint32_t psc_div = (uint32_t) ((SystemCoreClock/1e3)-1);
+  uint32_t psc_div = (uint32_t) ((SystemCoreClock/1e6)-1);
 
   // Set prescaler division factor
   TIMx->PSC = (psc_div - 1);
+  //TIMx->PSC = (60000);
   // Generate an update event to update prescaler value
   TIMx->EGR |= 1;
   // Enable counter
   TIMx->CR1 |= 1; // Set CEN = 1
 
-  TIMx->ARR = s*1000; // Set timer max count
+  TIMx->ARR = s*1000000; // Set timer max count
   TIMx->EGR |= 1;     // Force update
   TIMx->SR &= ~(0x1); // Clear UIF
   TIMx->CNT = 0;      // Reset count

@@ -4,7 +4,7 @@
 #include "UARTRingBuffer.h"
 #include "Moisture_Sensor.h"
 
-#define initial_probe_interval 60
+#define initial_probe_interval 5
 
 uint8_t htmlPage[] = 
 "<!DOCTYPE html>\
@@ -28,6 +28,7 @@ uint8_t htmlPage[] =
     <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=xxx  >\
     <br><br><button onclick=\"updateData(\'WT\')\">Submit</button><br><br>\
     <p>Last measured value: <p id=\"LMV\">xxx  </p>%</p>\
+    <p>Time since last water (s): <p id=\"TE\">xxx </p>%</p>\
 </div>\
 <script>\
 function updateData(input) {\
@@ -37,6 +38,7 @@ function updateData(input) {\
 }\
 const updateParams = new URLSearchParams();\
 updateParams.append(\"LMV\", \"\");\
+updateParams.append(\"TE\", \"\");\
 setInterval(function(){\
     fetch(new Request('', {headers: updateParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
@@ -80,15 +82,17 @@ void USART1_IRQHandler(){
     usart_ISR(ESP_USART);
 }
 
-/** TIM3 handles probing moisture sensor and watering plant
+/** TIM5 handles probing moisture sensor and watering plant
  */
-void TIM3_IRQHandler() {
+void TIM5_IRQHandler() {
     if (pumpOn) {
         stopWaterPlant();
+        setTimeElapsed(0);
     } else {
         probe();
+        TIME_ELAPSED += 1*initial_probe_interval;
     }
-    TIM3->SR &= ~(0x1); // Clear UIF
+    TIM5->SR &= ~(0x1); // Clear UIF
 }
 
 uint8_t parseValue(uint8_t *buffer, uint32_t i){
@@ -136,6 +140,9 @@ void parseRequest(uint8_t *buffer, GET_Request *get_request){
         else if (char1 == 'L' && char2 == 'M' && char3 == 'V') {
             get_request->LMV = 1;
         }
+        else if (char1 == 'T' && char2 == 'E' && char3 == ':') {
+            get_request->TE = 1;
+        }
         char1 = char2;
         char2 = char3;
         char3 = buffer[i];
@@ -161,9 +168,9 @@ int main(void) {
 
     // Initialize timer
     RCC->APB1ENR |= (1 << 0); // TIM2_EN
-    RCC->APB1ENR |= (1 << 1); // TIM3_EN
+    RCC->APB1ENR |= (1 << 3); // TIM5_EN
     initTIM(DELAY_TIM);
-    setTimer(TIM3, initial_probe_interval); // Probe every minute
+    setTimer(TIM5, initial_probe_interval); // Probe every minute
 
     // Configure ESP and Terminal UARTs
     USART_TypeDef * ESP_USART = initUSART(ESP_USART_ID, 115200);
@@ -176,12 +183,12 @@ int main(void) {
     // Enable interrupts globally
     __enable_irq();
 
-    // Configure interrupt for TIM3, USART1 and USART2
-    *NVIC_ISER0 |= (1 << 29);
+    // Configure interrupt for TIM5, USART1 and USART2
+    *NVIC_ISER1 |= (1 << 18);
     *NVIC_ISER1 |= (1 << 5);
     // *NVIC_ISER1 |= (1 << 6);
     ESP_USART->CR1.RXNEIE = 1;
-    TIM3->DIER |= 1;
+    TIM5->DIER |= 1;
     
     // Initialize ring buffer
     init_ring_buffer();
@@ -189,6 +196,7 @@ int main(void) {
 
     setWaterTime(30); // Initial water time set to 30 secs, can be changed through website
     setProbeInterval(initial_probe_interval); // Set probe interval
+    setTimeElapsed(0);
 
     // Initialize moisture threshold to 10%
     setMoistureThreshold(10);
@@ -218,6 +226,8 @@ int main(void) {
                     get_request.ptrWT = htmlPage+i;
                 case 2:
                     get_request.ptrLMV = htmlPage+i;
+                case 3:
+                    get_request.ptrTE = htmlPage+i;
             }
             ++j;
         }
@@ -237,6 +247,9 @@ int main(void) {
     sprintf(paramHolder, "%d  ", moisture);
     updateVal(get_request.ptrLMV, paramHolder);
 
+    sprintf(paramHolder, "%d", TIME_ELAPSED  );
+    updateVal(get_request.ptrTE, paramHolder);
+
     printData("Ready");
 
     while(1) {
@@ -248,6 +261,7 @@ int main(void) {
         get_request.MT = 0;
         get_request.WT = 0;
         get_request.LMV = 0;
+        get_request.TE = 0;
 
         if (lowMoisture) {
             waterPlant();
@@ -296,7 +310,22 @@ int main(void) {
                 sendData(paramHolder, paramLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
-            } else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
+
+            } 
+            if (get_request.TE) {
+                sprintf(paramHolder, "%d", TIME_ELAPSED);
+                uint16_t paramLen = strlen(paramHolder);
+
+                uint8_t cmd1[25] = "";
+                sprintf(cmd1, "AT+CIPSENDBUF=0,%d\r\n", paramLen);
+                uint16_t cmd1Len = strlen(cmd1);
+                sendData(cmd1, cmd1Len, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
+                sendData(paramHolder, paramLen, ESP_USART);
+                delay_millis(DELAY_TIM, CMD_DELAY_MS);
+                sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
+            }
+            else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
                 sendData(cmd, cmdLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData(htmlPage, get_request.htmlLen, ESP_USART);

@@ -24,9 +24,9 @@ void waterPlant() {
     // Water plant by turning pump on
     digitalWrite(GPIOA, WATER_PUMP, 1);
 
-    TIM3->DIER &= ~1;
-    setTimer(TIM3, WATER_TIME_SECONDS);
-    TIM3->DIER |= 1;
+    TIM5->DIER &= ~1;
+    setTimer(TIM5, WATER_TIME_SECONDS);
+    TIM5->DIER |= 1;
 
     pumpOn = 1;
 }
@@ -35,9 +35,9 @@ void stopWaterPlant() {
     // End plant watering
     digitalWrite(GPIOA, WATER_PUMP, 0);
 
-    TIM3->DIER &= ~1;
-    setTimer(TIM3, PROBE_INTERVAL);
-    TIM3->DIER |= 1;
+    TIM5->DIER &= ~1;
+    setTimer(TIM5, PROBE_INTERVAL);
+    TIM5->DIER |= 1;
 
     pumpOn = 0;
 }
@@ -52,5 +52,10 @@ void setWaterTime(uint8_t waterTimeSeconds) {
 
 void setProbeInterval(uint8_t probeInterval) {
     PROBE_INTERVAL = probeInterval;
-    setTimer(TIM3, PROBE_INTERVAL);
+    setTimer(TIM5, PROBE_INTERVAL);
+}
+
+void setTimeElapsed(uint16_t timeElapsed) {
+    TIME_ELAPSED = timeElapsed;
+    
 }
