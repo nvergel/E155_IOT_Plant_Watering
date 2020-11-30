@@ -43,7 +43,7 @@ setInterval(function(){\
     .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
 }, 10000);\
 const teParams = new URLSearchParams();\
-teParams.append(\"TE\", \"\");\
+teParams.append(\"TW\", \"\");\
 setInterval(function(){\
     fetch(new Request('', {headers: teParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"TE\").innerText = text});\
