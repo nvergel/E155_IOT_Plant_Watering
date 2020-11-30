@@ -26,9 +26,9 @@ uint8_t htmlPage[] =
     <br><br><button onclick=\"updateData(\'MT\')\">Submit</button><br><br>\
     <label for=\"WT\">Water Time(sec):</label>\
     <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=xxx  >\
-    <br><br><button onclick=\"updateData(\'WT\')\">Submit</button><br><br>\
-    <p>Last measured value: <p id=\"LMV\">xxx  </p>%</p>\
-    <p>Time since last water (s): <p id=\"TE\">xxx </p>%</p>\
+    <br><br><button onclick=\"updateData(\'WT\')\">Submit</button>\
+    <br><br><p>Last measured value: <p id=\"LMV\">xxx  </p>%</p>\
+    <br><br><p>Time since last water: <p id=\"TE\">xxx  </p>sec</p>\
 </div>\
 <script>\
 function updateData(input) {\
@@ -36,12 +36,17 @@ function updateData(input) {\
     params.append(input, document.getElementById(input).value);\
     fetch(new Request('', {headers: params})).then(window.alert(\"Value successfully updated\"));\
 }\
-const updateParams = new URLSearchParams();\
-updateParams.append(\"LMV\", \"\");\
-updateParams.append(\"TE\", \"\");\
+const lmvParams = new URLSearchParams();\
+lmvParams.append(\"LMV\", \"\");\
 setInterval(function(){\
-    fetch(new Request('', {headers: updateParams})).then(response => response.text())\
+    fetch(new Request('', {headers: lmvParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
+}, 10000);\
+const teParams = new URLSearchParams();\
+teParams.append(\"TE\", \"\");\
+setInterval(function(){\
+    fetch(new Request('', {headers: teParams})).then(response => response.text())\
+    .then(text => {if (text.length < 4) document.getElementById(\"TE\").innerText = text});\
 }, 10000);\
 </script>\r\n";
 
@@ -217,7 +222,7 @@ int main(void) {
     sprintf(cmd, "AT+CIPSENDBUF=0,%d\r\n", get_request.htmlLen);
     uint16_t cmdLen = strlen(cmd);
     uint8_t j = 0;
-    for (uint16_t i = 0; j < 3; ++i) {
+    for (uint16_t i = 0; j < 4; ++i) {
         if (htmlPage[i] == 'x' && htmlPage[i+1] == 'x' && htmlPage[i+2] == 'x') {
             switch (j) {
                 case 0:
@@ -247,7 +252,7 @@ int main(void) {
     sprintf(paramHolder, "%d  ", moisture);
     updateVal(get_request.ptrLMV, paramHolder);
 
-    sprintf(paramHolder, "%d", TIME_ELAPSED  );
+    sprintf(paramHolder, "%d  ", TIME_ELAPSED  );
     updateVal(get_request.ptrTE, paramHolder);
 
     printData("Ready");
@@ -258,10 +263,6 @@ int main(void) {
         // Clear temp_str buffer
         get_request.GET = 0;
         get_request.FAV = 0;
-        get_request.MT = 0;
-        get_request.WT = 0;
-        get_request.LMV = 0;
-        get_request.TE = 0;
 
         if (lowMoisture) {
             waterPlant();
@@ -288,17 +289,15 @@ int main(void) {
                 updateVal(get_request.ptrMT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
-            }
-            
-            if ( get_request.WT) {
+                get_request.MT = 0;
+            } else if ( get_request.WT) {
                 setWaterTime(get_request.WT_val);
                 sprintf(paramHolder, "\"%d\"  ", WATER_TIME_SECONDS);
                 updateVal(get_request.ptrWT, paramHolder);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
-            }
-
-            if (get_request.LMV) {
+                get_request.WT = 0;
+            } else if (get_request.LMV) {
                 sprintf(paramHolder, "%d", moisture);
                 uint16_t paramLen = strlen(paramHolder);
 
@@ -310,9 +309,8 @@ int main(void) {
                 sendData(paramHolder, paramLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
-
-            } 
-            if (get_request.TE) {
+                get_request.LMV = 0;
+            } else if (get_request.TE) {
                 sprintf(paramHolder, "%d", TIME_ELAPSED);
                 uint16_t paramLen = strlen(paramHolder);
 
@@ -324,8 +322,8 @@ int main(void) {
                 sendData(paramHolder, paramLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData("AT+CIPCLOSE=0\r\n", 15, ESP_USART);
-            }
-            else if (get_request.GET && !get_request.FAV && !get_request.WT && !get_request.MT){
+                get_request.TE = 0;
+            } else if (get_request.GET && !get_request.FAV){
                 sendData(cmd, cmdLen, ESP_USART);
                 delay_millis(DELAY_TIM, CMD_DELAY_MS);
                 sendData(htmlPage, get_request.htmlLen, ESP_USART);

@@ -69,7 +69,7 @@ void sendData(uint8_t* str, uint16_t strLen, USART_TypeDef* ESP_USART) {
     while(!DMA2->HISR.TCIF7);
     delay_millis(TIM2, 30);
     
-    uint8_t response[512] = "";
-    readString(ESP_USART, response);
-    printData(response);
+    // uint8_t response[512] = "";
+    // readString(ESP_USART, response);
+    // printData(response);
 }
