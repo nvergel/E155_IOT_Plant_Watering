@@ -40,7 +40,6 @@ void setTimer(TIM_TypeDef * TIMx, uint32_t s) {
 
   // Set prescaler division factor
   TIMx->PSC = (psc_div - 1);
-  //TIMx->PSC = (60000);
   // Generate an update event to update prescaler value
   TIMx->EGR |= 1;
   // Enable counter

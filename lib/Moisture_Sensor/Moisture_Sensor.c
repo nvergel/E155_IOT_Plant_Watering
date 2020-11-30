@@ -54,8 +54,3 @@ void setProbeInterval(uint8_t probeInterval) {
     PROBE_INTERVAL = probeInterval;
     setTimer(TIM5, PROBE_INTERVAL);
 }
-
-void setTimeElapsed(uint16_t timeElapsed) {
-    TIME_ELAPSED = timeElapsed;
-    
-}
