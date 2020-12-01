@@ -4,7 +4,7 @@
 #include "UARTRingBuffer.h"
 #include "Moisture_Sensor.h"
 
-#define initial_probe_interval 60
+#define initial_probe_interval 15
 
 uint8_t htmlPage[] = 
 "<!DOCTYPE html>\
@@ -28,7 +28,6 @@ uint8_t htmlPage[] =
     <input type=\"number\" id=\"WT\" name=\"WT\" min=\"1\" max=\"255\" value=xxx  >\
     <br><br><button onclick=\"updateData(\'WT\')\">Submit</button>\
     <br><br><p>Last measured value: <p id=\"LMV\">xxx  </p>%</p>\
-
 </div>\
 <script>\
 function updateData(input) {\
@@ -39,7 +38,7 @@ function updateData(input) {\
 const updateParams = new URLSearchParams();\
 updateParams.append(\"LMV\", \"\");\
 setInterval(function(){\
-    fetch(new Request('', {headers: lmvParams})).then(response => response.text())\
+    fetch(new Request('', {headers: updateParams})).then(response => response.text())\
     .then(text => {if (text.length < 4) document.getElementById(\"LMV\").innerText = text});\
 }, 10000);\
 </script>\r\n";
@@ -49,7 +48,7 @@ setInterval(function(){\
 
 void initESP8266(USART_TypeDef * ESP_USART, USART_TypeDef * TERM_USART){
     // Disable echo
-    sendData("ATE0\r\n", 6, ESP_USART);
+    sendData("ATE1\r\n", 6, ESP_USART);
     delay_millis(DELAY_TIM, CMD_DELAY_MS);
     
     // Enable multiple connections
@@ -84,13 +83,13 @@ void USART1_IRQHandler(){
 
 /** TIM3 handles probing moisture sensor and watering plant
  */
-void TIM3_IRQHandler() {
+void TIM5_IRQHandler() {
     if (pumpOn) {
         stopWaterPlant();
     } else {
         probe();
     }
-    TIM3->SR &= ~(0x1); // Clear UIF
+    TIM5->SR &= ~(0x1); // Clear UIF
 }
 
 uint8_t parseValue(uint8_t *buffer, uint32_t i){
@@ -189,7 +188,7 @@ int main(void) {
     init_ring_buffer();
     flush_buffer();
 
-    setWaterTime(30); // Initial water time set to 30 secs, can be changed through website
+    setWaterTime(7); // Initial water time set to 30 secs, can be changed through website
     setProbeInterval(initial_probe_interval); // Set probe interval
 
     // Initialize moisture threshold to 10%
@@ -251,9 +250,9 @@ int main(void) {
         get_request.WT = 0;
         get_request.LMV = 0;
 
-        if (lowMoisture) {
-            waterPlant();
-        }
+        //if (lowMoisture) {
+            //waterPlant();
+        //}
 
         // Loop through and read any data available in the buffer
         if (is_data_available()){

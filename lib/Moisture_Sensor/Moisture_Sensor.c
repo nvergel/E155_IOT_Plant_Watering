@@ -13,7 +13,7 @@ void probe(){
     }
     moisture = moisturePercentage(moistureADC);
     if (moisture < moistureThreshold) {
-        lowMoisture = 1;
+        waterPlant();
     }
 }
 
